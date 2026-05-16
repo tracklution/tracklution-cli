@@ -1,0 +1,38 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+        os: [ubuntu-latest]
+        include:
+          - node: 20
+            os: windows-latest
+          - node: 20
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: install
+        run: npm ci
+      - name: lint (syntax check)
+        run: npm run lint
+      - name: test
+        env:
+          PARITY_TEST_SKIP: ${{ github.event_name == 'pull_request' && '1' || '' }}
+        run: npm test
+      - name: pack dry-run (all four packages)
+        run: npm run pack:dry

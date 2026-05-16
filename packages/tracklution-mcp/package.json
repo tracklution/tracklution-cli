@@ -1,0 +1,44 @@
+{
+  "name": "tracklution-mcp",
+  "version": "1.0.0",
+  "description": "Discovery wedge for the Tracklution MCP server at https://mcp.tracklution.com/mcp. Today this is an alias of the `tracklution` package and prints the agent install protocol. Future versions will offer a local stdio<->Streamable-HTTP MCP proxy for clients without remote MCP support. Protocol: https://www.tracklution.com/agent-install.md",
+  "keywords": [
+    "tracklution",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "conversion-tracking",
+    "server-side-tracking",
+    "ai-agent",
+    "cursor",
+    "claude-code",
+    "windsurf",
+    "stdio",
+    "streamable-http"
+  ],
+  "homepage": "https://www.tracklution.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tracklution/tracklution-cli.git",
+    "directory": "packages/tracklution-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/tracklution/tracklution-cli/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tracklution-mcp": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tracklution": "^1.0.0"
+  }
+}

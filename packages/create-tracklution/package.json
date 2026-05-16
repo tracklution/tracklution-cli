@@ -1,0 +1,42 @@
+{
+  "name": "create-tracklution",
+  "version": "1.0.0",
+  "description": "Install Tracklution server-side conversion tracking. Alias of the `tracklution` package: forwards to its CLI so `npm create tracklution@latest` works. Real install goes via the Tracklution MCP at https://mcp.tracklution.com/mcp. Protocol: https://www.tracklution.com/agent-install.md",
+  "keywords": [
+    "tracklution",
+    "conversion-tracking",
+    "server-side-tracking",
+    "mcp",
+    "ai-agent",
+    "cursor",
+    "claude-code",
+    "windsurf",
+    "nextjs",
+    "create-tracklution"
+  ],
+  "homepage": "https://www.tracklution.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tracklution/tracklution-cli.git",
+    "directory": "packages/create-tracklution"
+  },
+  "bugs": {
+    "url": "https://github.com/tracklution/tracklution-cli/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-tracklution": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tracklution": "^1.0.0"
+  }
+}

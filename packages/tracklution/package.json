@@ -1,0 +1,70 @@
+{
+  "name": "tracklution",
+  "version": "1.0.0",
+  "description": "Install Tracklution server-side conversion tracking. Add the Tracklution MCP at https://mcp.tracklution.com/mcp and let your AI coding agent finish the install. Protocol: https://www.tracklution.com/agent-install.md",
+  "keywords": [
+    "tracklution",
+    "conversion-tracking",
+    "server-side-tracking",
+    "conversion-api",
+    "capi",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agent",
+    "cursor",
+    "claude-code",
+    "windsurf",
+    "codex",
+    "lovable",
+    "replit",
+    "bolt",
+    "nextjs",
+    "react",
+    "shopify",
+    "woocommerce",
+    "google-ads",
+    "meta-pixel",
+    "facebook-pixel",
+    "tiktok-pixel",
+    "linkedin-insight-tag",
+    "snapchat-pixel",
+    "pinterest-tag",
+    "microsoft-uet",
+    "reddit-pixel",
+    "klaviyo",
+    "ga4"
+  ],
+  "homepage": "https://www.tracklution.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tracklution/tracklution-cli.git",
+    "directory": "packages/tracklution"
+  },
+  "bugs": {
+    "url": "https://github.com/tracklution/tracklution-cli/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tracklution": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "node --check bin/cli.js && node --check src/payload.js",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "@tracklution/cli",
+  "version": "1.0.0",
+  "description": "Install Tracklution server-side conversion tracking. Scope-reserved alias of the `tracklution` package: forwards to its CLI. Real install goes via the Tracklution MCP at https://mcp.tracklution.com/mcp. Protocol: https://www.tracklution.com/agent-install.md",
+  "keywords": [
+    "tracklution",
+    "conversion-tracking",
+    "server-side-tracking",
+    "mcp",
+    "ai-agent",
+    "cursor",
+    "claude-code",
+    "windsurf",
+    "nextjs"
+  ],
+  "homepage": "https://www.tracklution.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tracklution/tracklution-cli.git",
+    "directory": "packages/at-tracklution-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/tracklution/tracklution-cli/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tracklution-cli": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "tracklution": "^1.0.0"
+  }
+}
