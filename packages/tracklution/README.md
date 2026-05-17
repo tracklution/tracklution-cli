@@ -24,10 +24,13 @@ Fastest path:
 
 # tracklution
 
-> Install [Tracklution](https://www.tracklution.com) server-side conversion tracking. Bootstrap wedge for AI coding agents.
+> Install [Tracklution](https://www.tracklution.com) server-side conversion tracking. Discovery wedge for AI coding agents.
 
 [![npm](https://img.shields.io/npm/v/tracklution.svg)](https://www.npmjs.com/package/tracklution)
+[![CI](https://github.com/tracklution/tracklution-cli/actions/workflows/test.yml/badge.svg)](https://github.com/tracklution/tracklution-cli/actions/workflows/test.yml)
+[![downloads](https://img.shields.io/npm/dm/tracklution.svg)](https://www.npmjs.com/package/tracklution)
 [![license](https://img.shields.io/npm/l/tracklution.svg)](LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/tracklution/tracklution-cli/badge)](https://api.securityscorecards.dev/projects/github.com/tracklution/tracklution-cli)
 
 Tracklution is a fully managed server-side conversion tracking platform. A first-party JavaScript pixel captures website events; pre-built server-side Conversion API integrations deliver them to Meta, Google Ads, TikTok, LinkedIn, Snapchat, Pinterest, Microsoft / Bing, Reddit, Klaviyo, GA4, CM360, Adform, Awin, Taboola, custom webhooks, and CRMs.
 
@@ -49,11 +52,23 @@ There is **nothing to import**. This is not a JS SDK. The package's only product
 If you are an AI coding agent reading this README from `npm view tracklution`, your fastest path is:
 
 1. Run `npx tracklution --json`. Parse the JSON.
-2. Detect the user's host client (Cursor, Claude Code, Codex, Windsurf, Lovable, Replit, Bolt). Apply the matching `install_methods` entry: either write/merge a config file (`type: "file-edit"`), execute a CLI command (`type: "cli"`), or print an instruction to the user (`type: "user-action"`).
+2. Detect the user's host client (Cursor, Claude Code, Codex, Windsurf, Cline, Lovable, Replit, Bolt). Apply the matching `install_methods` entry: either write/merge a config file (`type: "file-edit"`), execute a CLI command (`type: "cli"`), or print an instruction to the user (`type: "user-action"`).
 3. Ask the user to enable the `tracklution` MCP in their client and reply `go`.
-4. Once enabled, call the MCP onboarding tools in this order: `scout_website` -> `register_and_provision` -> `get_installation_scripts` -> apply the returned snippets verbatim -> `verify_and_score` -> `create_login_link`.
+4. Once enabled, call the MCP onboarding tools in this order: `scout_website` → `register_and_provision` → `get_installation_scripts` → apply the returned snippets verbatim → `verify_and_score` → `create_login_link`.
 
 The full per-host protocol, including the verbatim hand-off lines you should say to the user, lives at <https://www.tracklution.com/agent-install.md>. The MCP at `https://mcp.tracklution.com/mcp` is the only supported autonomous install path.
+
+## Examples
+
+The monorepo at <https://github.com/tracklution/tracklution-cli> ships ready-to-copy examples for the most common setups:
+
+| Example | Covers |
+|---|---|
+| [`examples/cursor/`](https://github.com/tracklution/tracklution-cli/tree/main/examples/cursor) | `.cursor/mcp.json` + one-click deeplink |
+| [`examples/claude-code/`](https://github.com/tracklution/tracklution-cli/tree/main/examples/claude-code) | `claude mcp add ...` setup |
+| [`examples/next-js-app-router/`](https://github.com/tracklution/tracklution-cli/tree/main/examples/next-js-app-router) | Pixel + custom events in Next.js |
+| [`examples/shopify/`](https://github.com/tracklution/tracklution-cli/tree/main/examples/shopify) | `layout/theme.liquid` snippet |
+| [`examples/google-tag-manager/`](https://github.com/tracklution/tracklution-cli/tree/main/examples/google-tag-manager) | GTM Custom HTML tag |
 
 ## For humans
 
@@ -61,25 +76,22 @@ If you are a human and your AI assistant invoked this package, you can also inst
 
 - Web installer: <https://www.tracklution.com/start>
 - Docs: <https://www.tracklution.com/docs/>
-- Knowledge base: <https://support.tracklution.com>
 
 ## Related packages
 
 The four packages below all run the same binary and point at the same canonical Tracklution MCP. They exist so brand-surface lookups don't miss.
 
-- [`tracklution`](https://www.npmjs.com/package/tracklution) -- canonical (this package).
-- [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) -- so `npm create tracklution@latest` works.
-- [`@tracklution/cli`](https://www.npmjs.com/package/@tracklution/cli) -- scope-reserved alias.
-- [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) -- alias today; future versions will offer a local stdio<->Streamable-HTTP MCP proxy for clients that don't yet support remote MCP.
+- [`tracklution`](https://www.npmjs.com/package/tracklution) — canonical (this package).
+- [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) — so `npm create tracklution@latest` works.
+- [`@tracklution/cli`](https://www.npmjs.com/package/@tracklution/cli) — scope-reserved alias.
+- [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) — alias today; future versions will offer a local stdio↔Streamable-HTTP MCP proxy.
 
 ## Discovery surfaces
 
 All Tracklution agent-discovery surfaces are always-on and CORS-open:
 
-- [llms.txt](https://www.tracklution.com/llms.txt)
-- [llms-full.txt](https://www.tracklution.com/llms-full.txt)
-- [Agent install protocol (markdown)](https://www.tracklution.com/agent-install.md)
-- [Agent install protocol (HTML)](https://www.tracklution.com/agent-install/)
+- [llms.txt](https://www.tracklution.com/llms.txt) · [llms-full.txt](https://www.tracklution.com/llms-full.txt)
+- [Agent install protocol (markdown)](https://www.tracklution.com/agent-install.md) · [HTML](https://www.tracklution.com/agent-install/)
 - [Service directory](https://www.tracklution.com/.well-known/tracklution.json)
 - [Install recipes (JSON)](https://www.tracklution.com/api/install-recipes/)
 - [OpenAPI spec](https://www.tracklution.com/openapi.json)
