@@ -1,13 +1,29 @@
-# Default: everything is owned by the Tracklution org.
-*                                       @tracklution
+# CODEOWNERS for tracklution-cli
+#
+# CODEOWNERS entries must be a GitHub username (@user) or a team
+# (@org/team-name) — orgs alone (@tracklution) are NOT valid and will be
+# silently ignored.
+#
+# To enable code-owner review enforcement, either:
+#   1. Create a team like `@tracklution/maintainers` in the org and add at
+#      least one member, OR
+#   2. Replace `@tracklution/maintainers` below with a specific @handle.
+#
+# Without one of those, this file is effectively a no-op and any reviewer
+# can approve any path. GitHub will display a warning on the file in the
+# repo settings UI but will not block merges.
 
-# Single source of truth for the agent install payload.
-/packages/tracklution/src/payload.js    @tracklution
+# Default: every file in the repo.
+*                                       @tracklution/maintainers
+
+# Single source of truth for the agent install payload — must be reviewed
+# carefully because it ships to npm.
+/packages/tracklution/src/payload.js    @tracklution/maintainers
 
 # Tests are the contract — review carefully when changing.
-/tests/                                 @tracklution
+/tests/                                 @tracklution/maintainers
 
 # CI + release plumbing.
-/.github/workflows/                     @tracklution
-/release-please-config.json             @tracklution
-/.release-please-manifest.json          @tracklution
+/.github/workflows/                     @tracklution/maintainers
+/release-please-config.json             @tracklution/maintainers
+/.release-please-manifest.json          @tracklution/maintainers
