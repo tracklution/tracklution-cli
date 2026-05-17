@@ -1,0 +1,72 @@
+name: Agent Report
+description: Share what happened when you asked an AI coding agent to install Tracklution. (Community compatibility data.)
+title: "[agent-report] "
+labels: ["agent-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We collect these reports to build a public agent-compatibility matrix.
+        Every report — success, partial success, or failure — is valuable.
+
+        **Privacy note**: redact any tracking IDs, container IDs, or domain
+        names from the transcript before posting. We don't need them.
+  - type: dropdown
+    id: agent_client
+    attributes:
+      label: Which agent?
+      options:
+        - Cursor
+        - Claude Code
+        - Codex CLI
+        - Windsurf
+        - Cline
+        - Lovable
+        - Replit Agent
+        - Bolt
+        - Aider
+        - Continue
+        - Zed
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: agent_version
+    attributes:
+      label: Agent version
+      description: Version string from the agent (e.g. "Cursor 0.52.4", "Claude Code 1.2.0").
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - ✅ Success — tracking went live without manual intervention
+        - 🟡 Partial — MCP installed but I had to help apply snippets / fix something
+        - 🟠 Stuck — agent installed the MCP but never finished the onboarding flow
+        - 🔴 Failed — agent could not install the MCP at all
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: The prompt you used
+      description: Verbatim, please. "Install Tracklution" / "Add server-side tracking" / etc.
+    validations:
+      required: true
+  - type: textarea
+    id: transcript
+    attributes:
+      label: Agent transcript (redacted)
+      description: Paste the relevant excerpt of the agent's actions. Remove any container IDs, login URLs, domain names.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: comments
+    attributes:
+      label: Anything else?
+      description: What worked, what didn't, what you wish the agent had done differently.
+    validations:
+      required: false

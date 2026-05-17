@@ -1,0 +1,13 @@
+# Default: everything is owned by the Tracklution org.
+*                                       @tracklution
+
+# Single source of truth for the agent install payload.
+/packages/tracklution/src/payload.js    @tracklution
+
+# Tests are the contract — review carefully when changing.
+/tests/                                 @tracklution
+
+# CI + release plumbing.
+/.github/workflows/                     @tracklution
+/release-please-config.json             @tracklution
+/.release-please-manifest.json          @tracklution
