@@ -99,6 +99,19 @@ Release PR creates the `vX.Y.Z` git tag, which triggers
 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) to publish all
 four packages to npm with `--provenance`.
 
+**One-time setup required**: GitHub Actions deliberately prevents `GITHUB_TOKEN`-driven
+events (like the tag push that release-please creates) from triggering downstream
+workflows. To make the tag → publish chain automatic, create a fine-grained PAT
+with `Contents: read & write`, `Pull requests: read & write`, and
+`Workflows: read & write` scoped to this repo, then store it as the
+`RELEASE_PLEASE_TOKEN` repo secret. The workflow falls back to `GITHUB_TOKEN`
+if the secret is unset, but in that case you must manually invoke publishing
+after merging each Release PR:
+
+```bash
+gh workflow run publish.yml --ref vX.Y.Z
+```
+
 The release-please config uses the `linked-versions` plugin so all four
 packages always share a version. Don't edit any `packages/*/package.json`
 `version` field by hand — it collides with release-please.
