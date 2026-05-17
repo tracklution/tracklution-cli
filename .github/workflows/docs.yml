@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: 20
       - name: install ajv-cli
-        run: npm install -g ajv-cli@latest ajv-formats@latest
+        run: npm install -g ajv-cli@^5 ajv-formats@^3
       - name: fetch live install-recipes
         run: curl -fsS https://www.tracklution.com/api/install-recipes/ -o /tmp/install-recipes.json
       - name: validate install-recipes against schema
