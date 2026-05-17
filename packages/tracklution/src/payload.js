@@ -62,7 +62,7 @@ export const INSTALL_METHODS = {
     merge_key: 'mcpServers.tracklution',
     body: { serverUrl: 'https://mcp.tracklution.com/mcp' },
     post_install_message:
-      "Reload Windsurf MCP settings (or restart Cascade), then say 'go'.",
+      "Fully restart Windsurf (close from system tray, then reopen). Then say 'go'.",
     agent_client_value: 'windsurf',
   },
   lovable: {
