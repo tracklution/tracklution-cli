@@ -1,0 +1,16 @@
+# Global default: let Git auto-detect text files.
+* text=auto
+
+# Files where LF is mandatory regardless of platform (do NOT combine `text=auto`
+# and `eol=lf` on the same line — Git treats them as conflicting directives).
+*.sh   text eol=lf
+*.tape text eol=lf
+*.toml text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Generated / binary assets — never normalize.
+docs/assets/*.gif binary
+docs/assets/*.png binary
+*.tgz             binary
