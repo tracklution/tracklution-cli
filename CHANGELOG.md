@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-From v1.1.0 onwards this file is maintained automatically by
+From v1.0.1 onwards this file is maintained automatically by
 [release-please](https://github.com/googleapis/release-please) in manifest mode
 with linked versions across all four packages — do not edit it by hand below
 the next release banner.
