@@ -28,6 +28,9 @@ jobs:
           cache: npm
       - name: install
         run: npm ci
+      - name: audit signatures (supply-chain hygiene)
+        run: npm audit signatures
+        continue-on-error: true
       - name: lint (syntax check)
         run: npm run lint
       - name: test

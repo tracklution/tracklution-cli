@@ -1,0 +1,6 @@
+{
+  "packages/tracklution": "1.0.0",
+  "packages/create-tracklution": "1.0.0",
+  "packages/at-tracklution-cli": "1.0.0",
+  "packages/tracklution-mcp": "1.0.0"
+}

@@ -1,0 +1,67 @@
+name: schema-validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'examples/**'
+      - '.github/workflows/schema-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'examples/**'
+      - '.github/workflows/schema-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate config files in examples/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: validate JSON files
+        shell: bash
+        run: |
+          set -e
+          shopt -s nullglob globstar
+          fail=0
+          for f in examples/**/*.json; do
+            if ! jq -e . "$f" > /dev/null 2>&1; then
+              echo "::error file=$f::Invalid JSON"
+              fail=1
+            else
+              echo "ok: $f"
+            fi
+          done
+          exit "$fail"
+      - name: validate TOML files
+        shell: bash
+        run: |
+          set -e
+          tomls=$(find examples -name '*.toml' -type f 2>/dev/null || true)
+          if [ -z "$tomls" ]; then
+            echo "no TOML files in examples/, skipping"
+            exit 0
+          fi
+          npm install @iarna/toml@^2 --no-save --silent
+          node -e "
+            const fs = require('node:fs');
+            const TOML = require('@iarna/toml');
+            const files = process.argv.slice(1).filter(Boolean);
+            let fail = 0;
+            for (const f of files) {
+              try {
+                TOML.parse(fs.readFileSync(f, 'utf8'));
+                console.log('ok:', f);
+              } catch (err) {
+                console.error('::error file=' + f + '::Invalid TOML: ' + err.message);
+                fail = 1;
+              }
+            }
+            process.exit(fail);
+          " $tomls
