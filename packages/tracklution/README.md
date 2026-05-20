@@ -65,12 +65,15 @@ If you are a human and your AI assistant invoked this package, you can also inst
 
 ## Related packages
 
-The four packages below all run the same binary and point at the same canonical Tracklution MCP. They exist so brand-surface lookups don't miss.
+The packages below all run the same binary and point at the same canonical Tracklution MCP. They exist so brand- and category-surface lookups don't miss.
 
 - [`tracklution`](https://www.npmjs.com/package/tracklution) -- canonical (this package).
 - [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) -- so `npm create tracklution@latest` works.
 - [`@tracklution/cli`](https://www.npmjs.com/package/@tracklution/cli) -- scope-reserved alias.
 - [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) -- alias today; future versions will offer a local stdio<->Streamable-HTTP MCP proxy for clients that don't yet support remote MCP.
+- [`server-side-tracking`](https://www.npmjs.com/package/server-side-tracking) -- category-surface alias.
+- [`conversion-tracking`](https://www.npmjs.com/package/conversion-tracking) -- category-surface alias.
+- [`conversion-api`](https://www.npmjs.com/package/conversion-api) -- category-surface alias.
 
 ## Discovery surfaces
 

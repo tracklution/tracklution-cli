@@ -10,6 +10,9 @@ const aliasBins = [
   resolve(repoRoot, 'packages/create-tracklution/bin/cli.js'),
   resolve(repoRoot, 'packages/at-tracklution-cli/bin/cli.js'),
   resolve(repoRoot, 'packages/tracklution-mcp/bin/cli.js'),
+  resolve(repoRoot, 'packages/server-side-tracking/bin/cli.js'),
+  resolve(repoRoot, 'packages/conversion-tracking/bin/cli.js'),
+  resolve(repoRoot, 'packages/conversion-api/bin/cli.js'),
 ];
 
 function run(bin, args = []) {

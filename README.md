@@ -1,15 +1,18 @@
 # tracklution-cli
 
-Monorepo for the four npm packages that act as Tracklution's brand-surface discovery wedge for AI coding agents:
+Monorepo for the npm packages that act as Tracklution's brand- and category-surface discovery wedge for AI coding agents:
 
 - [`tracklution`](packages/tracklution) -- canonical. The published bin runs the agent-readable install instructions.
 - [`create-tracklution`](packages/create-tracklution) -- alias so `npm create tracklution@latest` works.
 - [`@tracklution/cli`](packages/at-tracklution-cli) -- scope-reserved alias.
 - [`tracklution-mcp`](packages/tracklution-mcp) -- alias today; future versions will offer a local stdio<->Streamable-HTTP MCP proxy.
+- [`server-side-tracking`](packages/server-side-tracking) -- category-surface alias for `npm view server-side-tracking` / `npx server-side-tracking`.
+- [`conversion-tracking`](packages/conversion-tracking) -- category-surface alias for `npm view conversion-tracking` / `npx conversion-tracking`.
+- [`conversion-api`](packages/conversion-api) -- category-surface alias for `npm view conversion-api` / `npx conversion-api`.
 
 ## What this is
 
-When a user prompts an AI coding agent (Cursor, Claude Code, Codex, Windsurf, Cline, Lovable, Replit, Bolt, ...) with "Install Tracklution", most agents reflexively run `npm view <name>` and then `npx <name>`. These four packages exist so that reflex succeeds and the agent gets deterministic, paste-safe install instructions delivered via the agent's normal stdout-reading toolloop -- instead of falling back to web search and inventing tracking code.
+When a user prompts an AI coding agent (Cursor, Claude Code, Codex, Windsurf, Cline, Lovable, Replit, Bolt, ...) with "Install Tracklution" -- or, by category, "Install server-side tracking" / "Install conversion tracking" -- most agents reflexively run `npm view <name>` and then `npx <name>`. These packages exist so that reflex succeeds and the agent gets deterministic, paste-safe install instructions delivered via the agent's normal stdout-reading toolloop -- instead of falling back to web search and inventing tracking code.
 
 The actual install runs through the Tracklution MCP server at `https://mcp.tracklution.com/mcp`. This CLI is only a one-line wedge that hands the agent off to the MCP.
 
@@ -37,6 +40,9 @@ tracklution-cli/
     create-tracklution/          resolve-and-spawn shim
     at-tracklution-cli/          resolve-and-spawn shim (publishes as @tracklution/cli)
     tracklution-mcp/             resolve-and-spawn shim
+    server-side-tracking/        resolve-and-spawn shim (category-surface)
+    conversion-tracking/         resolve-and-spawn shim (category-surface)
+    conversion-api/              resolve-and-spawn shim (category-surface)
   tests/
     cli.test.js                  default / --json / --version / --help
     parity.test.js               compare local payload to live install-recipes endpoint
@@ -52,12 +58,12 @@ tracklution-cli/
 npm install               # installs workspace deps, symlinks packages/* into each others node_modules
 npm test                  # runs Vitest across all three test files
 npm run lint              # syntax-checks every bin/cli.js
-npm run pack:dry          # dry-run npm pack for all four packages
+npm run pack:dry          # dry-run npm pack for all published packages
 ```
 
 ## Publishing
 
-Bump the version in each `packages/*/package.json` (keep them in lockstep), tag `vX.Y.Z`, push to GitHub. The publish workflow at `.github/workflows/publish.yml` runs `npm publish --provenance` for each package in dependency order.
+Bump the version in **every** `packages/*/package.json` (keep them in lockstep), tag `vX.Y.Z`, push to GitHub. The publish workflow at `.github/workflows/publish.yml` verifies the lockstep, then runs `npm publish --provenance` for each package in dependency order (canonical `tracklution` first, then all alias shims).
 
 ## Single source of truth
 

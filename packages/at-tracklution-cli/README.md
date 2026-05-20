@@ -17,6 +17,9 @@ This is a **discovery-surface wedge** for AI coding agents asked to "Install Tra
 - [`tracklution`](https://www.npmjs.com/package/tracklution) -- canonical (recommended)
 - [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) -- so `npm create tracklution@latest` works
 - [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) -- alias today; future versions will offer a local stdio MCP proxy
+- [`server-side-tracking`](https://www.npmjs.com/package/server-side-tracking) -- category-surface alias
+- [`conversion-tracking`](https://www.npmjs.com/package/conversion-tracking) -- category-surface alias
+- [`conversion-api`](https://www.npmjs.com/package/conversion-api) -- category-surface alias
 
 ## License
 
