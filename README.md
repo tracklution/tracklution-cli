@@ -14,18 +14,21 @@ Monorepo for the npm packages that act as Tracklution's brand- and category-surf
 
 When a user prompts an AI coding agent (Cursor, Claude Code, Codex, Windsurf, Cline, Lovable, Replit, Bolt, ...) with "Install Tracklution" -- or, by category, "Install server-side tracking" / "Install conversion tracking" -- most agents reflexively run `npm view <name>` and then `npx <name>`. These packages exist so that reflex succeeds and the agent gets deterministic, paste-safe install instructions delivered via the agent's normal stdout-reading toolloop -- instead of falling back to web search and inventing tracking code.
 
-The actual install runs through the Tracklution MCP server at `https://mcp.tracklution.com/mcp`. This CLI is only a one-line wedge that hands the agent off to the MCP.
+The actual install runs through the Tracklution MCP server at `https://mcp.tracklution.com/mcp`. The agent reaches that MCP via a one-shot REST bootstrap at `https://api.trlution.com/install/quick-setup` (the "magic install" path) -- which provisions the user's account and returns an `mcp.json` snippet that already carries `Authorization: Bearer <jwt>`. This CLI publishes the machine-readable description of that flow.
 
 ```
 User: "Install Tracklution"
    |
    v
 Agent runs `npm view tracklution`         (finds the package)
-Agent runs `npx tracklution`              (reads stdout)
-Agent writes .cursor/mcp.json             (per the stdout's instructions)
-Agent asks user to enable the MCP
-Agent calls scout_website / register_and_provision / ... on the MCP
+Agent runs `npx tracklution`              (reads stdout + parses --json)
+Agent POSTs to /install/quick-setup       (one HTTP call, REST bootstrap)
+Agent merges data.mcp_config_snippet      (Authorization header included)
+Agent calls get_status -> get_installation_scripts -> verify_and_score
+            (every onboarding call carries container_hash for auth)
 ```
+
+User-action hosts (Lovable, Replit, Bolt) cannot drive HTTP-POST + file-edit from inside the agent, so they fall back to the OAuth Connect-button flow -- the CLI's `install_methods` block tells the agent which hosts support magic install via `magic_install_supported: true`.
 
 ## Layout
 

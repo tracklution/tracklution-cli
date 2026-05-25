@@ -1,6 +1,6 @@
 {
   "name": "conversion-tracking",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Install conversion tracking via Tracklution. Alias of the `tracklution` package: forwards to its CLI and prints agent-readable install instructions. Real install goes via the Tracklution MCP at https://mcp.tracklution.com/mcp. Protocol: https://www.tracklution.com/agent-install.md",
   "keywords": [
     "tracklution",
@@ -42,6 +42,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "tracklution": "^1.0.0"
+    "tracklution": "^2.0.0"
   }
 }
