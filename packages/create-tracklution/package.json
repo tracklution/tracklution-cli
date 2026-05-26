@@ -1,6 +1,6 @@
 {
   "name": "create-tracklution",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Install Tracklution server-side conversion tracking. Alias of the `tracklution` package: forwards to its CLI so `npm create tracklution@latest` works. Real install goes via the Tracklution MCP at https://mcp.tracklution.com/mcp. Protocol: https://www.tracklution.com/agent-install.md",
   "keywords": [
     "tracklution",
@@ -37,6 +37,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "tracklution": "^2.0.0"
+    "tracklution": "^3.0.0"
   }
 }

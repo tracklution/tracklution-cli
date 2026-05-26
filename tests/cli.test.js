@@ -32,6 +32,10 @@ const REQUIRED_TOP_LEVEL_KEYS = [
   'quick_setup_url',
   'api_base_url',
   'agent_install_protocol_url',
+  // v5: dedicated reference doc URL for per-host quirks, error code
+  // tables, two-axis model. Pinned here so consumers can deep-link
+  // without parsing the contract.
+  'agent_install_reference_url',
   'agent_install_html_url',
   'service_directory_url',
   'install_recipes_url',
@@ -40,6 +44,10 @@ const REQUIRED_TOP_LEVEL_KEYS = [
   'docs_url',
   'signup_url',
   'dashboard_url',
+  // v5: structured state-machine form of the agent contract. Agents
+  // consuming `npx tracklution --json` drive the conversation from
+  // this block.
+  'agent_contract',
   'magic_install_protocol',
   'install_methods',
   'next_steps_for_agent',
@@ -50,6 +58,11 @@ const REQUIRED_HOSTS = [
   'claude_code',
   'codex',
   'windsurf',
+  // v5: cline promoted to a first-class entry (was already in the
+  // contract's host_detection and in agent-install-reference.md; the
+  // install-recipes.json mirror added it explicitly). Adding here so
+  // parity with the live install-recipes endpoint holds.
+  'cline',
   'lovable',
   'replit',
   'bolt',
@@ -59,7 +72,7 @@ const REQUIRED_HOSTS = [
 // own loop (HTTP fetch + file edit). Lovable / Replit / Bolt are
 // user-action hosts where the agent can only print an instruction; they
 // fall back to the OAuth Connect-button path.
-const MAGIC_INSTALL_FILE_EDIT_HOSTS = ['cursor', 'claude_code', 'codex', 'windsurf'];
+const MAGIC_INSTALL_FILE_EDIT_HOSTS = ['cursor', 'claude_code', 'codex', 'windsurf', 'cline'];
 const MAGIC_INSTALL_USER_ACTION_HOSTS = ['lovable', 'replit', 'bolt'];
 
 describe('canonical tracklution CLI', () => {
@@ -267,6 +280,182 @@ describe('canonical tracklution CLI', () => {
         `host '${host}' must NOT advertise magic_install_supported: true`
       ).not.toBe(true);
     }
+  });
+
+  // v5 regression — lock the agent_contract block that drives the
+  // structured form of the conversation. install-recipes.json
+  // mirrors this; the parity test deep-checks both surfaces against
+  // each other. A regression that quietly removes a turn-3 variant,
+  // a silence rule, or a host detector reduces the contract surface
+  // — must surface in CI rather than at runtime.
+  it('--json agent_contract block carries the canonical contract structure', () => {
+    const contract = payload.agent_contract;
+    expect(typeof contract, 'agent_contract must be an object').toBe('object');
+
+    // All required top-level keys present.
+    const requiredKeys = [
+      'version',
+      'primary_doc',
+      'reference_doc',
+      'host_detection',
+      'turn_1_question',
+      'turn_2_branches',
+      'turn_3_handoff_magic_file_edit',
+      'turn_3_handoff_magic_cli',
+      'turn_3_handoff_oauth_explicit',
+      'turn_3_handoff_oauth_duplicate',
+      'turn_4_sequence_magic',
+      'turn_4_sequence_oauth',
+      'turn_4_recovery_401',
+      'turn_4_recovery_tool_not_found',
+      'turn_4_recovery_tool_not_found_message',
+      'turn_4_final_ok',
+      'turn_4_final_needs_action',
+      'failure_clause',
+      'silence_rules',
+    ];
+    for (const k of requiredKeys) {
+      expect(contract, `agent_contract missing key '${k}'`).toHaveProperty(k);
+    }
+
+    // host_detection must cover all 8 supported hosts (matches
+    // REQUIRED_HOSTS plus 'claude_code' which is already in the list
+    // — the 8th is the same one in cli.test.js's REQUIRED_HOSTS).
+    for (const host of [
+      'cursor',
+      'claude_code',
+      'codex',
+      'windsurf',
+      'cline',
+      'lovable',
+      'replit',
+      'bolt',
+    ]) {
+      expect(
+        contract.host_detection,
+        `agent_contract.host_detection.${host}`
+      ).toHaveProperty(host);
+      expect(Array.isArray(contract.host_detection[host])).toBe(true);
+    }
+
+    // turn_1_question is load-bearing user-facing text. Substring
+    // match on the two anchors agents pattern-match against ("email
+    // and website URL" + "`advanced`") so non-critical wording (the
+    // example email, punctuation) can evolve.
+    expect(typeof contract.turn_1_question).toBe('string');
+    expect(contract.turn_1_question).toContain('Tracklution needs your email and website URL');
+    expect(contract.turn_1_question).toContain('`advanced`');
+
+    // advanced_synonyms gives the LLM enough freedom to intent-match
+    // typos and equivalents. The user's own example had a typo
+    // ("avanced") — without synonyms the literal-match would have
+    // failed.
+    const synonyms = contract.turn_2_branches.advanced_synonyms;
+    expect(Array.isArray(synonyms)).toBe(true);
+    expect(synonyms.length).toBeGreaterThanOrEqual(4);
+    expect(synonyms).toContain('advanced');
+    expect(synonyms).toContain('oauth');
+
+    // Both 409 paths (status code OR next_action.tool signal) must
+    // resolve to oauth_fallback — that's the load-bearing wire
+    // signal for silent duplicate-account recovery.
+    expect(contract.turn_2_branches.api_409_duplicate_account).toBe('oauth_fallback');
+    expect(contract.turn_2_branches.api_next_action_oauth_fallback).toBe('oauth_fallback');
+
+    // turn_4_sequence_magic lists the canonical 5 post-install steps.
+    const seq = contract.turn_4_sequence_magic;
+    expect(Array.isArray(seq)).toBe(true);
+    expect(seq).toContain('get_status');
+    expect(seq).toContain('get_installation_scripts');
+    expect(seq).toContain('apply_snippets');
+    expect(seq).toContain('verify_and_score');
+    expect(seq).toContain('create_login_link');
+
+    // silence_rules: 7 explicit DO-NOTs + the load-bearing exception
+    // for the login URL. Removing any rule weakens the contract — pin.
+    const rules = contract.silence_rules;
+    expect(Array.isArray(rules)).toBe(true);
+    expect(rules.length).toBeGreaterThanOrEqual(7);
+    const joined = rules.join('\n').toLowerCase();
+    expect(joined).toContain('narrate');
+    expect(joined).toContain('echo');
+    expect(joined).toContain('paraphrase');
+    expect(joined).toContain('error code');
+    expect(joined).toContain('exception');
+    expect(joined).toContain('create_login_link');
+  });
+
+  // v5 regression — lock the expected_response_keys trim. Adding
+  // `data.scripts` or `data.next_steps` back inflates the agent's
+  // pre-MCP context window and breaks the silence rules' "no
+  // echoing JSON envelopes" directive.
+  it('--json magic_install_protocol.step_2 dropped data.scripts and data.next_steps', () => {
+    const keys = payload.magic_install_protocol.step_2_post_quick_setup.expected_response_keys;
+    expect(Array.isArray(keys)).toBe(true);
+    expect(keys, 'expected_response_keys must NOT advertise data.scripts').not.toContain(
+      'data.scripts'
+    );
+    expect(keys, 'expected_response_keys must NOT advertise data.next_steps').not.toContain(
+      'data.next_steps'
+    );
+    // Positive: the four handles the agent actually needs.
+    expect(keys).toContain('data.mcp_token');
+    expect(keys).toContain('data.container.id');
+    expect(keys).toContain('data.container.hash');
+    expect(keys).toContain('data.mcp_config_snippet');
+  });
+
+  // v5 regression: payload.js's magic_install_protocol.step_3 must
+  // mirror install-recipes.json's cli_commands.claude_code block.
+  // The npm-published payload is what `npx tracklution --json`
+  // surfaces — agents driving the install from that JSON alone need
+  // BOTH the tokenless and magic-install Claude Code command forms.
+  // Without this test, a future payload.js edit that removed the
+  // cli_commands block would silently break Claude Code magic install
+  // for agents that don't fetch install-recipes.json separately.
+  it('--json magic_install_protocol.step_3 carries cli_commands.claude_code (mirrors install-recipes.json)', () => {
+    const step3 = payload.magic_install_protocol.step_3_merge_mcp_config;
+    expect(step3.host_specific_paths, 'host_specific_paths must be present').toBeDefined();
+    // claude_code is intentionally absent from host_specific_paths —
+    // it's a CLI host, not file-edit. v3-era drift had `~/.claude.json`
+    // listed there, which would have caused agents to silently
+    // corrupt that file. The v5 fix removed the entry.
+    expect(step3.host_specific_paths.claude_code).toBeUndefined();
+    expect(step3.host_specific_paths_note).toBeDefined();
+    expect(String(step3.host_specific_paths_note)).toMatch(/Claude Code.*CLI host/i);
+
+    // cli_commands.claude_code carries BOTH the tokenless form (OAuth
+    // fallback) and the magic-install template (Bearer token via
+    // --header flag).
+    const cli = step3.cli_commands;
+    expect(cli, 'step_3.cli_commands must be present').toBeDefined();
+    expect(cli.claude_code, 'cli_commands.claude_code must be present').toBeDefined();
+    const cc = cli.claude_code;
+    expect(typeof cc.tokenless_form).toBe('string');
+    expect(typeof cc.with_bearer_token_template).toBe('string');
+
+    // Pin the load-bearing fragments.
+    expect(cc.with_bearer_token_template).toContain('{mcp_token}');
+    expect(cc.with_bearer_token_template).toContain('--header');
+    expect(cc.with_bearer_token_template).toContain('Authorization: Bearer');
+
+    // Both forms MUST use --transport http per Claude Code 1.x
+    // compatibility (anthropics/claude-code#46835). The legacy
+    // --transport streamable-http silently fails with "Invalid
+    // transport type".
+    expect(cc.tokenless_form).toMatch(/--transport http\b/);
+    expect(cc.with_bearer_token_template).toMatch(/--transport http\b/);
+    expect(cc.tokenless_form).not.toContain('streamable-http');
+    expect(cc.with_bearer_token_template).not.toContain('streamable-http');
+  });
+
+  it('--json magic_install_protocol.duplicate_account_recovery references oauth_fallback', () => {
+    const recovery = payload.magic_install_protocol.duplicate_account_recovery;
+    expect(typeof recovery.trigger).toBe('string');
+    expect(typeof recovery.action).toBe('string');
+    expect(recovery.trigger).toMatch(/oauth_fallback/);
+    expect(recovery.action.toLowerCase()).toContain('oauth_fallback');
+    expect(recovery.action.toLowerCase()).toContain('do not prompt');
   });
 
   it('--json quick_setup_url uses the short prod API host (no `ack`)', () => {
