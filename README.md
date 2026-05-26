@@ -58,14 +58,14 @@ flowchart LR
 <details>
 <summary>Full MCP tool surface (16 tools)</summary>
 
-The MCP server exposes two modes on a single endpoint:
+The MCP server exposes a unified 16-tool surface using MCP [lazy authentication](https://claude.com/docs/connectors/building/lazy-authentication) (HTTP 401 + `WWW-Authenticate`):
 
-| Mode | Tools | When |
-|---|---|---|
-| Public (no auth) | `scout_website`, `register_and_provision`, `get_installation_scripts`, `select_installation_method`, `verify_and_score`, `get_next_steps`, `get_onboarding_session`, `create_login_link`, plus `request_analytics_access` | Onboarding a new account |
-| Authenticated (OAuth 2.1 + PKCE) | `get_status`, `get_api_key_info`, `list_containers`, `get_container`, `get_summary`, `get_report`, `list_events`, `list_sessions` | After-install analytics + reporting |
+| Group | Tools | Auth required? | When |
+|---|---|---|---|
+| Onboarding | `scout_website`, `register_and_provision`, `get_installation_scripts`, `select_installation_method`, `verify_and_score`, `get_next_steps`, `get_onboarding_session`, `create_login_link` | No | Onboarding a new account |
+| Analytics | `get_status`, `get_api_key_info`, `list_containers`, `get_container`, `get_summary`, `get_report`, `list_events`, `list_sessions` | Yes (OAuth 2.1 + PKCE) | After-install analytics + reporting |
 
-In public mode the analytics tool names are mounted as auth-bridge stubs that return a `needs_action: user_authenticates_mcp` envelope, telling the agent to walk the user through OAuth.
+Calling an analytics tool without an OAuth session returns HTTP 401 + `WWW-Authenticate`; your MCP host (Cursor, Claude, etc.) triggers the OAuth flow inline and retries the same call automatically once the user authenticates.
 
 </details>
 

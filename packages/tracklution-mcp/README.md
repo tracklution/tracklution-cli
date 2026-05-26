@@ -22,9 +22,9 @@ Prints the Tracklution agent install protocol to stdout. AI coding agents should
 
 ## What the MCP server exposes
 
-The Tracklution MCP server at `https://mcp.tracklution.com/mcp` is a [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-11-25/) MCP server. It runs in **two modes** on a single endpoint:
+The Tracklution MCP server at `https://mcp.tracklution.com/mcp` is a [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-11-25/) MCP server. It exposes a unified 16-tool surface using the MCP [lazy-authentication pattern](https://claude.com/docs/connectors/building/lazy-authentication) (HTTP 401 + `WWW-Authenticate`).
 
-### Public mode (onboarding, no auth)
+### Onboarding tools (no auth)
 
 | Tool | Purpose |
 |---|---|
@@ -36,9 +36,8 @@ The Tracklution MCP server at `https://mcp.tracklution.com/mcp` is a [Streamable
 | `get_next_steps` | Scoring-driven ordered guidance. |
 | `get_onboarding_session` | Replayable session transcript. |
 | `create_login_link` | Single-use dashboard handoff URL. |
-| `request_analytics_access` | When the user asks for stats in public mode, returns a `needs_action: user_authenticates_mcp` envelope pointing at OAuth. |
 
-### Authenticated mode (analytics + reporting, OAuth 2.1 + PKCE)
+### Analytics tools (OAuth 2.1 + PKCE)
 
 | Tool | Purpose |
 |---|---|
@@ -48,10 +47,10 @@ The Tracklution MCP server at `https://mcp.tracklution.com/mcp` is a [Streamable
 | `get_container` | One container's full record. |
 | `get_summary` | Aggregated event / source / destination stats. |
 | `get_report` | Custom-dimension report. |
-| `list_events` | Recent events with rich filters (gclid / fbclid / ttclid / etc.). |
-| `list_sessions` | Recent visitor sessions. |
+| `list_events` | Fetch a single event by ID. |
+| `list_sessions` | Fetch a single session by ID. |
 
-The same analytics tool names exist in public mode as auth-bridge stubs that return a `needs_action: user_authenticates_mcp` envelope — your agent should surface that envelope's `user_instruction` to the user verbatim.
+Calling any analytics tool without an OAuth session returns HTTP 401 + `WWW-Authenticate`; your MCP host (Cursor, Claude, etc.) triggers the OAuth flow inline and retries the same call automatically once the user authenticates.
 
 ## v2.0 — planned local stdio proxy
 
