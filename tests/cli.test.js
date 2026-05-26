@@ -210,6 +210,11 @@ describe('canonical tracklution CLI', () => {
     expect(joined).toContain('verify_and_score');
     expect(joined).toContain('create_login_link');
     expect(joined).toContain('get_status');
+    // v5.1: Turn 5 scored hand-off requires get_next_steps to fetch the
+    // overall_progress + next_steps list before the create_login_link
+    // call. Surface the tool name to agents reading next_steps.
+    expect(joined).toContain('get_next_steps');
+    expect(joined).toContain('Tracklution score');
     // The v1 `scout_website` step was dropped in v2 — the REST endpoint
     // handles website-scout server-side. If a future agent loops on
     // this string, it would dead-end. Assert it's gone.
@@ -362,13 +367,17 @@ describe('canonical tracklution CLI', () => {
     expect(contract.turn_2_branches.api_409_duplicate_account).toBe('oauth_fallback');
     expect(contract.turn_2_branches.api_next_action_oauth_fallback).toBe('oauth_fallback');
 
-    // turn_4_sequence_magic lists the canonical 5 post-install steps.
+    // turn_4_sequence_magic lists the canonical post-install steps.
+    // v5.1 added `get_next_steps` between `verify_and_score` and
+    // `create_login_link` so the Turn 5 scored hand-off has access to
+    // `overall_progress` + `next_steps[]` before composing the message.
     const seq = contract.turn_4_sequence_magic;
     expect(Array.isArray(seq)).toBe(true);
     expect(seq).toContain('get_status');
     expect(seq).toContain('get_installation_scripts');
     expect(seq).toContain('apply_snippets');
     expect(seq).toContain('verify_and_score');
+    expect(seq).toContain('get_next_steps');
     expect(seq).toContain('create_login_link');
 
     // silence_rules: 7 explicit DO-NOTs + the load-bearing exception
@@ -383,6 +392,127 @@ describe('canonical tracklution CLI', () => {
     expect(joined).toContain('error code');
     expect(joined).toContain('exception');
     expect(joined).toContain('create_login_link');
+    // v5.1: Turn 5 scored hand-off + Turn 6 propose-diff prompt are
+    // exempt from the <=2-sentence cap. The silence rules MUST declare
+    // the carve-out so agents don't refuse to emit the longer
+    // multi-line templates.
+    expect(joined).toContain('turn 5');
+  });
+
+  // v5.1 — new agent_contract keys: Turn 4 Step 2 OAuth-branch question
+  // (fixes the advanced-mode "name + email" hallucination bug), Turn 5
+  // scored hand-off (replaces single-line "Tracking is live"), Turn 6
+  // improve-score loop, and the verify_and_score routing block that
+  // splits not_ready_reason into three behavioral classes. These four
+  // blocks are the new load-bearing surfaces; pin their shape so a
+  // future doc edit can't silently regress.
+  it('--json agent_contract carries Turn 4 OAuth-branch question (advanced-mode add-new-container)', () => {
+    const contract = payload.agent_contract;
+    expect(typeof contract.turn_4_oauth_branch_question).toBe('string');
+    expect(contract.turn_4_oauth_branch_question).toContain('NEW');
+    expect(contract.turn_4_oauth_branch_question).toContain('EXISTING');
+    expect(contract.turn_4_oauth_branch_question).toContain('`new <url>`');
+    expect(contract.turn_4_oauth_branch_question).toContain('`existing`');
+
+    const newSyn = contract.turn_4_oauth_branch_new_synonyms;
+    const existingSyn = contract.turn_4_oauth_branch_existing_synonyms;
+    expect(Array.isArray(newSyn)).toBe(true);
+    expect(Array.isArray(existingSyn)).toBe(true);
+    expect(newSyn).toContain('new');
+    expect(newSyn).toContain('add');
+    expect(existingSyn).toContain('existing');
+    expect(existingSyn).toContain('connect');
+
+    // The "what call to make on the `new` branch" hint must mention
+    // auth_token (NOT email/name) so the agent doesn't hallucinate a
+    // "I need your name and email" prompt for OAuth-authed users.
+    expect(typeof contract.turn_4_oauth_new_branch_call).toBe('string');
+    expect(contract.turn_4_oauth_new_branch_call).toContain('auth_token');
+    expect(contract.turn_4_oauth_new_branch_call).toContain('WITHOUT email');
+
+    // multi_client_ambiguous recovery: the agent must surface
+    // next_action.reason verbatim and EXIT. Looping would burn tokens
+    // and never resolve.
+    expect(typeof contract.turn_4_recovery_multi_client_ambiguous).toBe('string');
+    expect(contract.turn_4_recovery_multi_client_ambiguous).toMatch(/next_action\.reason/);
+    expect(contract.turn_4_recovery_multi_client_ambiguous.toUpperCase()).toContain('EXIT');
+  });
+
+  it('--json agent_contract carries verify_and_score routing classes (3 buckets)', () => {
+    const routing = payload.agent_contract.verify_and_score_routing;
+    expect(typeof routing).toBe('object');
+
+    // The bug fix: only_pageview_seen + missing_bottom_funnel_event
+    // are explicit no-retry / user-action gaps. Before v5.1 they were
+    // bundled into the general "retry per budget" bucket which caused
+    // the agent to spin on a fresh install with only PageView seen.
+    const noRetry = routing.done_user_action_no_retry;
+    expect(Array.isArray(noRetry)).toBe(true);
+    expect(noRetry).toContain('only_pageview_seen');
+    expect(noRetry).toContain('missing_bottom_funnel_event');
+    expect(noRetry).toContain('awaiting_connector_activation');
+    expect(noRetry).toContain('awaiting_first_party_mode');
+    expect(noRetry).toContain('ok');
+
+    const transient = routing.transient_retry_with_budget;
+    expect(Array.isArray(transient)).toBe(true);
+    expect(transient).toContain('no_events_after_install');
+    expect(transient).toContain('events_processing');
+
+    const codeFix = routing.code_fix_retry_once;
+    expect(Array.isArray(codeFix)).toBe(true);
+    expect(codeFix).toContain('missing_contact_info');
+    expect(codeFix).toContain('domain_mismatch');
+  });
+
+  it('--json agent_contract.turn_5_scored_handoff carries calls + template + substitutions', () => {
+    const handoff = payload.agent_contract.turn_5_scored_handoff;
+    expect(typeof handoff).toBe('object');
+
+    const calls = handoff.calls_before_message;
+    expect(Array.isArray(calls)).toBe(true);
+    expect(calls.some((c) => c.includes('get_next_steps'))).toBe(true);
+    expect(calls.some((c) => c.includes('create_login_link'))).toBe(true);
+
+    const template = handoff.template;
+    expect(typeof template).toBe('string');
+    // Load-bearing anchors of the gamified hand-off message. A
+    // regression that drops the score line or the "100%" framing
+    // breaks the product positioning — pin both.
+    expect(template).toContain('Tracklution score:');
+    expect(template).toContain('{overall_progress}/100');
+    expect(template).toContain('reach 100%');
+    expect(template).toContain('`improve`');
+
+    const subs = handoff.template_substitutions;
+    expect(typeof subs.score_impact).toBe('string');
+    expect(subs.score_impact.toLowerCase()).toContain('verbatim');
+  });
+
+  it('--json agent_contract.turn_6_improve_loop carries triggers + algorithm + scan patterns', () => {
+    const loop = payload.agent_contract.turn_6_improve_loop;
+    expect(typeof loop).toBe('object');
+
+    const triggers = loop.triggers;
+    expect(Array.isArray(triggers)).toBe(true);
+    expect(triggers).toContain('improve');
+    expect(triggers).toContain('100%');
+
+    const steps = loop.steps;
+    expect(Array.isArray(steps)).toBe(true);
+    expect(steps.length).toBeGreaterThanOrEqual(5);
+    const stepsJoined = steps.join('\n').toLowerCase();
+    expect(stepsJoined).toContain('configure_connector');
+    expect(stepsJoined).toContain('configure_dns');
+    expect(stepsJoined).toContain('skip');
+
+    expect(typeof loop.propose_diff_prompt).toBe('string');
+    expect(loop.propose_diff_prompt).toContain('`yes`');
+    expect(loop.propose_diff_prompt).toContain('`skip`');
+    expect(loop.propose_diff_prompt).toContain('`show another`');
+
+    expect(typeof loop.snippet_source).toBe('string');
+    expect(loop.snippet_source.toLowerCase()).toContain('do not invent');
   });
 
   // v5 regression — lock the expected_response_keys trim. Adding

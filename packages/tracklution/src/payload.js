@@ -10,7 +10,7 @@
 // install-recipes endpoint and deep-checks the install_methods block AND
 // the agent_contract block.
 
-export const PAYLOAD_VERSION = '3.0.0';
+export const PAYLOAD_VERSION = '3.1.0';
 
 export const URLS = {
   mcp_url: 'https://mcp.tracklution.com/mcp',
@@ -93,34 +93,152 @@ export const AGENT_CONTRACT = {
     'get_installation_scripts',
     'apply_snippets',
     'verify_and_score',
+    'get_next_steps',
     'create_login_link',
   ],
   turn_4_sequence_oauth: [
     'get_status',
     'list_containers',
-    'match_by_website_url',
+    'ask_oauth_branch_question',
+    'register_and_provision_OR_match_by_website_url',
     'get_installation_scripts',
     'apply_snippets',
     'verify_and_score',
+    'get_next_steps',
     'create_login_link',
   ],
+  // v5.1: Turn 4 Step 2 OAuth-branch question. Asks the OAuth-authed
+  // user whether to add a NEW website (auth_token + register_and_provision)
+  // or connect to an EXISTING container (list_containers + match by URL).
+  // Fixes the "I need your name and email" hallucination bug where the
+  // agent had no authoritative path for the brand-new + advanced case.
+  turn_4_oauth_branch_question:
+    "You're signed in. Add Tracklution to a NEW website, or connect to an EXISTING container? Reply `new <url>` or `existing`.",
+  turn_4_oauth_branch_new_synonyms: ['new', 'add', 'install', 'create'],
+  turn_4_oauth_branch_existing_synonyms: ['existing', 'connect', 'pick', 'choose'],
+  turn_4_oauth_branch_skip_question_when:
+    'list_containers returns 0 containers (go straight to new <url>)',
+  turn_4_oauth_new_branch_call:
+    'register_and_provision({auth_token, website_url, framework, agent_client, idempotency_key}) WITHOUT email/name -- server reads identity from JWT',
   turn_4_recovery_401: 'silent_oauth_fallback',
   turn_4_recovery_tool_not_found: 'ask_user_to_reload_or_open_new_chat',
   turn_4_recovery_tool_not_found_message:
     "The MCP isn't visible in this chat session yet \u2014 open a new chat and say `continue Tracklution install`, run Cmd/Ctrl+Shift+P \u2192 Developer: Reload Window, or toggle `tracklution` off/on in your MCP settings. Then reply `go`.",
-  turn_4_final_ok: 'Tracking is live. Open: <login_link_url>',
-  turn_4_final_needs_action: '<verification.message> Open: <login_link_url>',
+  turn_4_recovery_multi_client_ambiguous:
+    'Surface next_action.reason verbatim and EXIT. Do NOT call any other MCP tool. The user finishes setup in the dashboard.',
+  // v5.1: verify_and_score now routes by not_ready_reason class. Old
+  // behavior bundled all event-shape gaps into one "retry per budget"
+  // bucket, which caused the agent to retry verify_and_score on a fresh
+  // install with only PageView seen -- wasted user time and felt broken.
+  // New: only_pageview_seen / missing_bottom_funnel_event are
+  // "user-action-needed, no retry, transition to Turn 5 scored hand-off."
+  verify_and_score_routing: {
+    done_user_action_no_retry: [
+      'ok',
+      'awaiting_connector_activation',
+      'awaiting_first_party_mode',
+      'only_pageview_seen',
+      'missing_bottom_funnel_event',
+    ],
+    transient_retry_with_budget: [
+      'no_events_after_install',
+      'script_not_seen',
+      'event_not_received_yet',
+      'events_processing',
+    ],
+    code_fix_retry_once: ['missing_contact_info', 'domain_mismatch'],
+    note:
+      "All paths converge on the Turn 5 scored hand-off. only_pageview_seen and missing_bottom_funnel_event explicitly DO NOT retry -- the user must trigger the event on the live site; a 30s wait won't help.",
+  },
+  // v5.1: legacy aliases retained for backward compat. The canonical
+  // multi-line template lives at turn_5_scored_handoff.template below.
+  turn_4_final_ok:
+    'Tracking is live. Tracklution score: <overall_progress>/100. Top 3 ways to reach 100%: ... Open: <login_link_url> (see turn_5_scored_handoff.template for the canonical multi-line form).',
+  turn_4_final_needs_action:
+    '<verification.message> Tracklution score: <overall_progress>/100. Top 3 ways to reach 100%: ... Open: <login_link_url> (see turn_5_scored_handoff.template for the canonical multi-line form).',
+  // v5.1: Turn 5 scored hand-off. After verify_and_score routes back,
+  // call get_next_steps + create_login_link, then send a single
+  // multi-line message containing the Tracklution score (0-100) + top 3
+  // next_steps. This is the gamification surface that sells Tracklution
+  // post-install ("each percent point = more accurate attribution = more
+  // efficient ad spend").
+  turn_5_scored_handoff: {
+    calls_before_message: [
+      'get_next_steps({recalculate: true})',
+      'create_login_link({target_page: dashboard|connectors|dns})',
+    ],
+    target_page_selection:
+      'dashboard for ok, connectors for awaiting_connector_activation, dns for awaiting_first_party_mode, dashboard otherwise',
+    template:
+      "Tracking is live. Tracklution score: {overall_progress}/100. Top {N} ways to reach 100% \u2014 each percent point = more accurate attribution = more efficient ad spend:\n1. {next_steps[0].title} \u2014 {next_steps[0].score_impact}\n2. {next_steps[1].title} \u2014 {next_steps[1].score_impact}\n3. {next_steps[2].title} \u2014 {next_steps[2].score_impact}\nOpen your dashboard: {_sensitive_login_url}\nReply `improve` and I'll walk you through the in-code changes one by one, or `done` to stop here.",
+    template_substitutions: {
+      lead_sentence_for_ok: 'Tracking is live.',
+      lead_sentence_for_non_ok:
+        '<one-sentence verification.message from verify_and_score>',
+      lead_sentence_for_100_pct:
+        'Tracklution score: 100/100. Maximum marketing budget efficiency unlocked.',
+      lead_sentence_for_budget_exhausted_transient:
+        "Events haven't arrived yet \u2014 trigger a PageView on the site and reply `verify` once it's live.",
+      score_impact: 'Forwarded verbatim from API; do NOT parse or rewrite',
+      N: 'min(3, next_steps.length); omit bullet list and use 100_pct lead when N == 0',
+    },
+  },
+  // v5.1: Turn 6 improve-score loop. On user `improve` reply, the agent
+  // scans the project, proposes ONE diff per highest-impact in-code
+  // step, applies on `yes`, then re-runs verify_and_score with a fresh
+  // idempotency_key and re-enters Turn 5 with the updated score.
+  turn_6_improve_loop: {
+    triggers: ['improve', '100', '100%', 'more', 'next', 'score', 'optimize'],
+    steps: [
+      'call get_next_steps({recalculate: false})',
+      'pick first entry with tool_to_call != null AND action IN (implement_events, implement_contact_info)',
+      'SKIP entries with action IN (configure_connector, configure_dns, review_step) -- those are dashboard actions linked in Turn 5',
+      'scan project for the right surface (contact_info -> signup/login/profile/checkout forms; events -> checkout/lead surfaces)',
+      'propose ONE diff via the propose_diff_prompt template below',
+      'on `yes`: apply edit, run verify_and_score with FRESH idempotency_key, re-enter Turn 5 with updated score',
+      'on `skip`: drop that entry, propose next eligible step',
+      'on `show another`: scan a different surface for the SAME step',
+      'on `done` or silence: exit loop',
+    ],
+    propose_diff_prompt:
+      'Found `<path>:<line>`. I\'d add this snippet for {step.score_impact}:\n```<lang>\n<snippet>\n```\nApply? Reply `yes` / `skip` / `show another`.',
+    scan_patterns: {
+      implement_contact_info: [
+        '**/{sign,log,register}*.{tsx,jsx,vue,php,html}',
+        '**/checkout*',
+        '**/contact*',
+        '**/auth/*',
+        '**/profile/*',
+      ],
+      implement_events_lead: [
+        '**/contact*',
+        '**/quote*',
+        '**/demo*',
+        '**/lead*',
+      ],
+      implement_events_purchase: [
+        '**/checkout*',
+        '**/order*',
+        '**/payment*',
+        '**/stripe*',
+        '**/woo*',
+        '**/shopify*',
+      ],
+    },
+    snippet_source:
+      'Use framework_snippets.* from get_installation_scripts. DO NOT invent tracking code.',
+  },
   failure_clause:
     "I can't install Tracklution automatically here. Sign up at https://www.tracklution.com/start.",
   silence_rules: [
     'Do not narrate steps.',
     'Do not echo URLs, JWTs, container IDs, hashes, idempotency keys, JSON envelopes, HTTP requests.',
-    'EXCEPTION: the single create_login_link URL in the final success message IS allowed and required.',
+    'EXCEPTION: the single create_login_link URL in the Turn 5 scored hand-off IS allowed and required.',
     "Do not list per-host setup blocks for hosts you're not in.",
     'Do not paraphrase the contract to the user.',
     'Do not surface API error codes to the user.',
-    '<=2 sentences per intermediate-turn message. Turn 1 and final use the explicit verbatim templates.',
-    'After create_login_link, inline the URL; do not write to a file; do not echo separately. Single-use.',
+    '<=2 sentences per intermediate-turn message. EXEMPT: Turn 1 question, Turn 4 Step 2 OAuth-branch question, Turn 5 scored hand-off, Turn 6 propose-diff prompt -- those use verbatim multi-line templates.',
+    'After create_login_link, inline the URL into the Turn 5 message; do not write to a file; do not echo separately. Single-use.',
   ],
 };
 
@@ -361,8 +479,9 @@ export const NEXT_STEPS_FOR_AGENT = [
   "Follow the contract at https://www.tracklution.com/agent-install.md. Detect host, ask the verbatim turn-1 question (or skip if email+URL already provided), then magic-install via the REST bootstrap at `quick_setup_url`.",
   "Merge `data.mcp_config_snippet` into the host's MCP config file (Bearer JWT already attached). Save `data.container.id` AND `data.container.hash` for every follow-up onboarding-tool call.",
   "After the user replies `go`: call `get_status` (success predicate: `structuredContent.servers[].reachable === true`). Then `get_installation_scripts({ container_id, container_hash, framework })` — `container_hash` is REQUIRED on every onboarding call.",
-  "Apply every relevant snippet silently. Drive `verify_and_score({ container_id, container_hash, idempotency_key })` until `status: ok` (`not_ready_reason: null`).",
-  "On `duplicate_account` (HTTP 409): read `next_action.tool === 'oauth_fallback'` and silently switch to the OAuth path — write tokenless `mcp.json`, send the contract's turn-3 duplicate hand-off, then on `go` use `list_containers` + match by URL. Finish with `create_login_link` — inline its URL once in the final message; single-use.",
+  "Apply every relevant snippet silently. Drive `verify_and_score({ container_id, container_hash, idempotency_key })` until `status: ok` OR a user-action gap (`only_pageview_seen`, `missing_bottom_funnel_event`, `awaiting_connector_activation`, `awaiting_first_party_mode`) — these are NOT retry-able; transition to the Turn 5 scored hand-off.",
+  "Turn 5 scored hand-off: call `get_next_steps({ container_id, container_hash, recalculate: true })` + `create_login_link`, then send ONE multi-line message: `Tracking is live. Tracklution score: X/100. Top 3 ways to reach 100%: ...` + the dashboard URL. On user `improve`, run the Turn 6 loop: pick top in-code step, scan project, propose ONE diff, on `yes` apply + re-verify.",
+  "On `duplicate_account` (HTTP 409): read `next_action.tool === 'oauth_fallback'` and silently switch to the OAuth path — write tokenless `mcp.json`, send the contract's turn-3 duplicate hand-off, then on `go` ASK the user (verbatim, in quotes): \"You're signed in. Add Tracklution to a NEW website, or connect to an EXISTING container? Reply `new <url>` or `existing`.\" On `new <url>`, call `register_and_provision({ auth_token, website_url, ... })` WITHOUT email/name. On `multi_client_ambiguous` (HTTP 409), surface `next_action.reason` verbatim and EXIT.",
 ];
 
 export function getPayload({ name = 'tracklution', version = PAYLOAD_VERSION } = {}) {
@@ -431,13 +550,36 @@ export function renderTextBlock({ name = 'tracklution', version = PAYLOAD_VERSIO
     '  get_installation_scripts    -- args: {container_id, container_hash, framework}',
     '  apply snippets verbatim',
     '  verify_and_score            -- args: {container_id, container_hash, idempotency_key}',
-    '                                 retry until status === "ok"',
-    '  create_login_link           -- inline URL ONCE in final message. Single-use.',
+    '                                 RETRY MAP by data.verification.not_ready_reason:',
+    '                                   only_pageview_seen, missing_bottom_funnel_event -> NO retry',
+    '                                     (user must trigger event on live site, transition to Turn 5)',
+    '                                   no_events_after_install, script_not_seen,',
+    '                                   event_not_received_yet, events_processing      -> retry budget',
+    '                                   missing_contact_info, domain_mismatch          -> code-fix + retry 1x',
+    '                                   awaiting_connector_activation / first_party_mode -> Turn 5',
+    '  get_next_steps              -- args: {container_id, container_hash, recalculate: true}',
+    '                                 read data.overall_progress + data.next_steps[]',
+    '  create_login_link           -- target_page = dashboard | connectors | dns',
+    '',
+    'TURN 5 -- scored hand-off (one verbatim multi-line message):',
+    '',
+    '  Tracking is live. Tracklution score: {overall_progress}/100.',
+    '  Top {N} ways to reach 100%:',
+    '   1. {next_steps[0].title} -- {next_steps[0].score_impact}',
+    '   2. {next_steps[1].title} -- {next_steps[1].score_impact}',
+    '   3. {next_steps[2].title} -- {next_steps[2].score_impact}',
+    '  Open your dashboard: {_sensitive_login_url}',
+    '  Reply `improve` to walk through in-code changes, or `done` to stop.',
+    '',
+    'TURN 6 -- on `improve`: get_next_steps -> pick top in-code step -> scan project',
+    '  -> propose ONE diff -> on `yes` apply + re-verify -> back to Turn 5 with new score.',
     '',
     '  CRITICAL: every onboarding tool requires `container_hash`.',
     '',
     'On `duplicate_account` (HTTP 409): silent OAuth fallback per the contract.',
-    'Do NOT echo errors, URLs, JWTs, or hashes to the user (final login URL is the',
+    'On `multi_client_ambiguous` (HTTP 409, advanced-mode multi-company users):',
+    'surface `next_action.reason` verbatim and EXIT -- do NOT call any other MCP tool.',
+    'Do NOT echo errors, URLs, JWTs, or hashes to the user (the Turn 5 login URL is the',
     'only allowed exception).',
     '',
     'Reference (always-on, CORS-open):',
