@@ -543,19 +543,25 @@ describe('canonical tracklution CLI', () => {
   // Without this test, a future payload.js edit that removed the
   // cli_commands block would silently break Claude Code magic install
   // for agents that don't fetch install-recipes.json separately.
-  it('--json magic_install_protocol.step_3 carries cli_commands.claude_code (mirrors install-recipes.json)', () => {
+  it('--json magic_install_protocol.step_3 reclassifies claude_code as file-edit + keeps cli_commands fallback', () => {
     const step3 = payload.magic_install_protocol.step_3_merge_mcp_config;
     expect(step3.host_specific_paths, 'host_specific_paths must be present').toBeDefined();
-    // claude_code is intentionally absent from host_specific_paths —
-    // it's a CLI host, not file-edit. v3-era drift had `~/.claude.json`
-    // listed there, which would have caused agents to silently
-    // corrupt that file. The v5 fix removed the entry.
-    expect(step3.host_specific_paths.claude_code).toBeUndefined();
+    // v6: claude_code is now a FILE-EDIT host (project-root `.mcp.json`),
+    // so it IS listed in host_specific_paths. The old contract wrongly
+    // modeled it as a CLI host. The path must be the project-root
+    // `.mcp.json` (NOT `~/.claude.json`, which carries session state).
+    expect(step3.host_specific_paths.claude_code).toEqual(['.mcp.json']);
     expect(step3.host_specific_paths_note).toBeDefined();
-    expect(String(step3.host_specific_paths_note)).toMatch(/Claude Code.*CLI host/i);
+    // The note must now describe the .mcp.json file-edit path and must NOT
+    // call Claude Code a "CLI host" anymore.
+    const note = String(step3.host_specific_paths_note);
+    expect(note).toMatch(/\.mcp\.json/);
+    expect(note).toMatch(/file-edit/i);
+    expect(note).not.toMatch(/Claude Code is a CLI host/i);
 
-    // cli_commands.claude_code carries BOTH the tokenless form (OAuth
-    // fallback) and the magic-install template (Bearer token via
+    // cli_commands.claude_code is RETAINED as an optional fallback (when
+    // the `claude` binary is on PATH): it carries BOTH the tokenless form
+    // (OAuth fallback) and the magic-install template (Bearer token via
     // --header flag).
     const cli = step3.cli_commands;
     expect(cli, 'step_3.cli_commands must be present').toBeDefined();
@@ -615,7 +621,8 @@ describe('canonical tracklution CLI', () => {
     expect(payload.install_methods.lovable.value).toBe(mcpUrl);
     expect(payload.install_methods.replit.value).toBe(mcpUrl);
     expect(payload.install_methods.bolt.value).toBe(mcpUrl);
-    expect(payload.install_methods.claude_code.command).toContain(mcpUrl);
+    // v6: claude_code is a file-edit host now; its URL lives in body.url.
+    expect(payload.install_methods.claude_code.body.url).toBe(mcpUrl);
     expect(payload.install_methods.codex.body_toml).toContain(mcpUrl);
   });
 });

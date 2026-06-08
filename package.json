@@ -19,7 +19,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "node --check packages/tracklution/bin/cli.js && node --check packages/tracklution/src/payload.js && node --check packages/create-tracklution/bin/cli.js && node --check packages/at-tracklution-cli/bin/cli.js && node --check packages/tracklution-mcp/bin/cli.js && node --check packages/server-side-tracking/bin/cli.js && node --check packages/conversion-tracking/bin/cli.js && node --check packages/conversion-api/bin/cli.js",
+    "lint": "node --check packages/tracklution/bin/cli.js && node --check packages/tracklution/src/payload.js && node --check packages/tracklution/src/install.js && node --check packages/create-tracklution/bin/cli.js && node --check packages/at-tracklution-cli/bin/cli.js && node --check packages/tracklution-mcp/bin/cli.js && node --check packages/server-side-tracking/bin/cli.js && node --check packages/conversion-tracking/bin/cli.js && node --check packages/conversion-api/bin/cli.js",
     "pack:dry": "npm pack --workspace tracklution --dry-run && npm pack --workspace create-tracklution --dry-run && npm pack --workspace @tracklution/cli --dry-run && npm pack --workspace tracklution-mcp --dry-run && npm pack --workspace server-side-tracking --dry-run && npm pack --workspace conversion-tracking --dry-run && npm pack --workspace conversion-api --dry-run"
   },
   "devDependencies": {

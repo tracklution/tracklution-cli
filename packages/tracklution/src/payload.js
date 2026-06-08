@@ -7,10 +7,13 @@
 //   - https://www.tracklution.com/agent-install-reference.md (per-host detail)
 //
 // Drift is policed by tests/parity.test.js, which fetches the live
-// install-recipes endpoint and deep-checks the install_methods block AND
-// the agent_contract block.
+// install-recipes endpoint and asserts the local `install_methods` block is
+// a structural superset of the live `mcp_install_methods` (every shared
+// host/field must `toEqual`), plus `mcp_url`. NOTE: the parity test does
+// NOT check `agent_contract` — keep the contract mirrors (agent-install.md,
+// install-recipes.json::agent_contract, this file) in sync by hand.
 
-export const PAYLOAD_VERSION = '3.1.0';
+export const PAYLOAD_VERSION = '3.2.0';
 
 export const URLS = {
   mcp_url: 'https://mcp.tracklution.com/mcp',
@@ -61,7 +64,12 @@ export const AGENT_CONTRACT = {
   reference_doc: URLS.agent_install_reference_url,
   host_detection: {
     cursor: ['dir:.cursor/', 'file:~/.cursor/mcp.json', 'process:cursor'],
-    claude_code: ['path:claude', 'dir:~/.claude/'],
+    // Claude Code sets CLAUDECODE=1 in its shell and
+    // CLAUDE_CODE_ENTRYPOINT=cli|claude-desktop in the agent process. Those
+    // env signals are the most reliable detector (they fire in the
+    // Desktop-embedded agent where the `claude` binary is NOT on PATH); the
+    // path/dir signals are the fallback.
+    claude_code: ['env:CLAUDECODE', 'env:CLAUDE_CODE_ENTRYPOINT', 'path:claude', 'dir:~/.claude/'],
     codex: ['path:codex', 'dir:~/.codex/'],
     windsurf: ['dir:~/.codeium/windsurf/', 'process:windsurf'],
     cline: ['dir:saoudrizwan.claude-dev', 'dir:~/.cline/'],
@@ -280,18 +288,73 @@ export const MAGIC_INSTALL_PROTOCOL = {
     expected_response_keys: [
       'data.mcp_token',
       'data.mcp_token_expires_at',
+      'data.laravel_auth_token',
+      'data.laravel_auth_token_expires_at',
       'data.container.id',
       'data.container.hash',
       'data.mcp_config_snippet',
       'data.mcp_endpoint',
     ],
     note:
-      "`get_installation_scripts` (called AFTER the MCP comes up authenticated) is the canonical source for tracking snippets, recommended events, and step-by-step guidance. The quick-setup response only carries the four handles the agent needs to wire up auth + identify the container. `data.scripts` and `data.next_steps` were removed in v5 to keep the agent's pre-MCP context window tight.",
+      "`get_installation_scripts` is the canonical source for tracking snippets, recommended events, and step-by-step guidance. `data.mcp_token` is the 90-day MCP transport JWT (goes into the host MCP config). `data.laravel_auth_token` is a SHORT-LIVED user JWT (~60 min) that authenticates the EXISTING REST onboarding endpoints under `api_base_url`/onboarding/* (see `rest_onboarding` below) so install+verify+score can finish in session 1 WITHOUT waiting for the live MCP — this is how Claude Code reaches Cursor parity. Treat BOTH tokens as secrets (header use only, never echo). `data.scripts` and `data.next_steps` were removed in v5 to keep context tight.",
+  },
+  // REST-onboarding path: after quick-setup, drive the SAME onboarding
+  // endpoints the MCP tools proxy, directly over HTTP, using
+  // `data.laravel_auth_token` as the Bearer. This decouples install+verify
+  // from the live MCP transport. Endpoints are under `api_base_url`:
+  // `/onboarding/containers/{id}/...`. All require `Authorization: Bearer
+  // <laravel_auth_token>`. The MCP-tool flow (turn_4_sequence_magic) remains
+  // the alternative path once the MCP is connected.
+  rest_onboarding: {
+    bearer: 'data.laravel_auth_token',
+    base: 'api_base_url (https://api.trlution.com/mcp-api/v1)',
+    sequence: [
+      'GET  /onboarding/containers/{container_id}/installation-scripts',
+      'POST /onboarding/containers/{container_id}/verify-and-score  (Idempotency-Key: FRESH per call)',
+      'GET  /onboarding/containers/{container_id}/next-steps',
+      'POST /onboarding/containers/{container_id}/login-link  (Idempotency-Key: FRESH per call; {target_page:"dashboard"})',
+    ],
+    idempotency_rule:
+      "quick-setup REPLAYS the same token for a repeated key, so persist ONE quick-setup key and reuse it on quick-setup retries. verify-and-score and login-link instead REPLAY THEIR CACHED RESPONSE VERBATIM on key reuse, so generate a FRESH Idempotency-Key for EACH of those calls — reusing a key returns a stale score/link.",
+    single_shot_note:
+      "data.laravel_auth_token CANNOT be refreshed via the install flow (a new quick-setup key 409s; replaying the old key returns the same now-stale token). So finish REST onboarding inside session 1. Re-verification AFTER the user deploys is the post-restart MCP's job (it holds the 90-day token); a restart is a fresh session that no longer holds container.{id,hash}, so recover it via the MCP `list_containers` tool first, then `verify_and_score`.",
+    sensitive_fields_note:
+      "These REST endpoints return `_sensitive_*` fields (e.g. `_sensitive_webhook`) UNREDACTED (only the MCP-tool layer redacts them). The webhook URL embeds the tracking key — do NOT echo any `_sensitive_*` value to chat.",
+    installation_method_note:
+      "PUT /onboarding/containers/{id}/installation-method is OPTIONAL and the proven Cursor flow SKIPS it. If `next-steps` ever surfaces a 'no installation method' gap, call it with a VALID enum from [manual, gtm, gtm-template, woocommerce, shopify, stripe, affiliate, magic] — use `magic` for the npx/magic provisioning path (or `manual`). `method:\"npm\"` does NOT exist and would 422.",
+  },
+  // Turnkey path: `npx tracklution install` runs the entire REST-onboarding
+  // flow deterministically (zero new deps, Node>=18 builtins). The agent
+  // passes its own identity and the collected inputs; the CLI provisions,
+  // writes the host MCP config, injects the base loader for plain HTML,
+  // emits framework snippets for the agent to apply, runs the day-0 baseline
+  // verify, and prints ONE machine-readable JSON line. Neither JWT is
+  // printed (both stay inside the CLI process).
+  npx_install: {
+    command:
+      'npx tracklution install --host=<host> --framework=<html|nextjs> --email=<email> --url=<production-url>',
+    prefer:
+      'Pass --host and --framework explicitly (the agent knows its own identity); the CLI auto-detects only as a fallback.',
+    output_line_keys: [
+      'status',
+      'host',
+      'framework',
+      'container_id',
+      'config_path',
+      'restart_required',
+      'score',
+      'login_url',
+      'snippets',
+      'next_steps',
+    ],
+    agent_followup:
+      'Apply any returned framework `snippets` (the CLI does NOT edit framework source — only plain-HTML <head>), then relay ONE baseline hand-off sentence. Restart once for the live MCP; re-verify after the user deploys.',
   },
   step_3_merge_mcp_config: {
     target_path_default: '.cursor/mcp.json',
     host_specific_paths: {
       cursor: ['.cursor/mcp.json', '~/.cursor/mcp.json'],
+      claude_code: ['.mcp.json'],
       windsurf: ['~/.codeium/windsurf/mcp_config.json'],
       codex: ['~/.codex/config.toml', '%USERPROFILE%/.codex/config.toml'],
       cline: [
@@ -302,7 +365,7 @@ export const MAGIC_INSTALL_PROTOCOL = {
       ],
     },
     host_specific_paths_note:
-      "Only file-edit hosts are listed. Claude Code is a CLI host — it does NOT use a config file; do NOT edit `~/.claude.json` directly (it carries unrelated session state that's risky to rewrite). See `cli_commands.claude_code` below for the agent-safe form.",
+      "Claude Code is a FILE-EDIT host: it natively reads a project-root `.mcp.json` (same idea as Cursor's `.cursor/mcp.json`) and needs NO `claude` binary, so this path works in the CLI, the Desktop-embedded agent (where `claude` is NOT on PATH), and the IDE extension. Build the server entry from `install_methods.claude_code.body` ({type:'http', url}) and overlay `headers.Authorization` from `data.mcp_config_snippet.tracklution` — `.mcp.json` HTTP servers REQUIRE the `type:\"http\"` field, which the quick-setup snippet omits. Do NOT edit `~/.claude.json` (it carries unrelated session state). The `cli_commands.claude_code` `claude mcp add` form below is an OPTIONAL fallback for when the `claude` binary happens to be on PATH.",
     cli_commands: {
       claude_code: {
         tokenless_form:
@@ -310,7 +373,7 @@ export const MAGIC_INSTALL_PROTOCOL = {
         with_bearer_token_template:
           'claude mcp add --transport http --header "Authorization: Bearer {mcp_token}" tracklution https://mcp.tracklution.com/mcp',
         note:
-          "Use `with_bearer_token_template` for magic install (substitute `{mcp_token}` with `data.mcp_token` from the quick-setup response). Use `tokenless_form` for the OAuth fallback path (Claude Code's `/mcp` command then triggers browser OAuth). Options MUST come before the server name — Claude Code's CLI parser is strict about ordering (see anthropics/claude-code#19120, #20296). The flag is `--transport http`, NOT `--transport streamable-http` (the latter fails with 'Invalid transport type' in Claude Code 1.x).",
+          "OPTIONAL fallback only — the primary Claude Code path is the `.mcp.json` file edit above (works in Desktop where `claude` is NOT on PATH). Use these commands ONLY when the `claude` binary is on PATH and you prefer the CLI: `with_bearer_token_template` for magic install (substitute `{mcp_token}` with `data.mcp_token`), `tokenless_form` for the OAuth fallback (Claude Code's `/mcp` command then triggers browser OAuth). Options MUST come before the server name — Claude Code's CLI parser is strict about ordering (see anthropics/claude-code#19120, #20296). The flag is `--transport http`, NOT `--transport streamable-http` (the latter fails with 'Invalid transport type' in Claude Code 1.x).",
       },
     },
     snippet_field: 'data.mcp_config_snippet',
@@ -323,7 +386,7 @@ export const MAGIC_INSTALL_PROTOCOL = {
     merge_algorithm:
       "Read the JSON file (if missing, treat as `{}`). Ensure `mcpServers` exists as an object. Shallow-merge the keys of `data.mcp_config_snippet` into `mcpServers` (i.e. `mcp_json.mcpServers = {...mcp_json.mcpServers, ...data.mcp_config_snippet}`). This adds `tracklution` without disturbing other servers. Then write the file back with 2-space indent. Cursor's file watcher picks up the change within a few seconds — but the active chat session's tool list may not refresh mid-conversation (known Cursor bug). The contract's Turn 4 step 1 recovery covers the stale-session case.",
     format_notes:
-      'Cursor + Windsurf + Cline use JSON config files — apply `merge_algorithm` above. Codex uses TOML (`~/.codex/config.toml`) and its per-server header table is `http_headers` — NOT `headers`. Agent converts the JSON snippet to TOML manually: `[mcp_servers.tracklution]\\nurl = "..."\\nenabled = true\\n\\n[mcp_servers.tracklution.http_headers]\\nAuthorization = "Bearer ..."`. Codex does NOT hot-reload `config.toml`; the user must restart their `codex` session. Claude Code is a CLI host — see `cli_commands.claude_code` for the magic-install + OAuth-fallback command forms (do NOT edit `~/.claude.json` directly).',
+      'Cursor + Claude Code + Windsurf + Cline use JSON config files — apply `merge_algorithm` above. Claude Code\'s `.mcp.json` server entry REQUIRES `type:"http"` (take it from `install_methods.claude_code.body`, then overlay the Authorization header from `data.mcp_config_snippet.tracklution`); after writing it, restart Claude Code (or run `/mcp`) to connect. Codex uses TOML (`~/.codex/config.toml`) and its per-server header table is `http_headers` — NOT `headers`. Agent converts the JSON snippet to TOML manually: `[mcp_servers.tracklution]\\nurl = "..."\\nenabled = true\\n\\n[mcp_servers.tracklution.http_headers]\\nAuthorization = "Bearer ..."`. Codex does NOT hot-reload `config.toml`; the user must restart their `codex` session.',
   },
   step_4_verify_connection: {
     tool: 'get_status',
@@ -369,11 +432,22 @@ export const INSTALL_METHODS = {
     agent_client_value: 'cursor',
   },
   claude_code: {
-    type: 'cli',
-    command:
-      'claude mcp add --transport http tracklution https://mcp.tracklution.com/mcp',
+    // Claude Code is a FILE-EDIT host (corrected from the old `type:"cli"`).
+    // It natively reads a project-root `.mcp.json` with `type:"http"` — same
+    // idea as Cursor's `.cursor/mcp.json` — and needs NO `claude` binary, so
+    // this works in the CLI, the Desktop-embedded agent (where `claude` is
+    // not on PATH), and the IDE extension. The `claude mcp add` CLI form
+    // lives in magic_install_protocol.step_3.cli_commands as an optional
+    // fallback for when the binary is on PATH.
+    type: 'file-edit',
+    target_paths: ['.mcp.json'],
+    merge_key: 'mcpServers.tracklution',
+    // OAuth-fallback (tokenless) body. `.mcp.json` HTTP servers REQUIRE the
+    // `type:"http"` discriminator. Magic install overlays
+    // `headers.Authorization` from the quick-setup `data.mcp_config_snippet`.
+    body: { type: 'http', url: 'https://mcp.tracklution.com/mcp' },
     post_install_message:
-      "I added the Tracklution MCP via the Claude CLI. Run `/mcp` to confirm it's connected, then reply `go`.",
+      'I added the Tracklution MCP to .mcp.json. Restart Claude Code (or run `/mcp`) to connect, then reply `go`.',
     magic_install_supported: true,
     magic_install_note: MAGIC_INSTALL_NOTE,
     agent_client_value: 'claude-code',

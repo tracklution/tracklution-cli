@@ -1,6 +1,6 @@
 {
   "name": "conversion-api",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "Install Conversion API (CAPI) integrations via Tracklution. Alias of the `tracklution` package: forwards to its CLI and prints agent-readable install instructions. Real install goes via the Tracklution MCP at https://mcp.tracklution.com/mcp. Protocol: https://www.tracklution.com/agent-install.md",
   "keywords": [
     "tracklution",
