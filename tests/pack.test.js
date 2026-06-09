@@ -60,6 +60,9 @@ describe.each([
   { workspace: 'create-tracklution', expectedName: 'create-tracklution' },
   { workspace: '@tracklution/cli', expectedName: '@tracklution/cli' },
   { workspace: 'tracklution-mcp', expectedName: 'tracklution-mcp' },
+  { workspace: 'server-side-tracking', expectedName: 'server-side-tracking' },
+  { workspace: 'conversion-tracking', expectedName: 'conversion-tracking' },
+  { workspace: 'conversion-api', expectedName: 'conversion-api' },
 ])('pack manifest: $expectedName (alias)', ({ workspace, expectedName }) => {
   let entry;
   let paths;
