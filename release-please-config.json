@@ -1,0 +1,39 @@
+{
+  "release-type": "node",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": false,
+  "draft": false,
+  "prerelease": false,
+  "packages": {
+    "packages/tracklution": {
+      "component": "tracklution",
+      "package-name": "tracklution"
+    },
+    "packages/create-tracklution": {
+      "component": "create-tracklution",
+      "package-name": "create-tracklution"
+    },
+    "packages/at-tracklution-cli": {
+      "component": "at-tracklution-cli",
+      "package-name": "@tracklution/cli"
+    },
+    "packages/tracklution-mcp": {
+      "component": "tracklution-mcp",
+      "package-name": "tracklution-mcp"
+    }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "tracklution-cli-monorepo",
+      "components": [
+        "tracklution",
+        "create-tracklution",
+        "at-tracklution-cli",
+        "tracklution-mcp"
+      ]
+    }
+  ]
+}

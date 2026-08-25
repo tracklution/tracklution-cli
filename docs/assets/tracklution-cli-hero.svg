@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="tracklution-cli  one command to install server-side tracking via any AI coding agent">
+  <title>tracklution-cli</title>
+  <desc>One command to install server-side conversion tracking via any AI coding agent. npx tracklution ’ MCP ’ tracking live.</desc>
+
+  <style>
+    .bg            { fill: #0b1220; }
+    .panel         { fill: #111a2e; stroke: #1e2a44; stroke-width: 1.5; }
+    .panel-bar     { fill: #1a2540; }
+    .dot-r         { fill: #ff5f57; }
+    .dot-y         { fill: #febc2e; }
+    .dot-g         { fill: #28c840; }
+    .text-mono     { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+    .text-sans     { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    .prompt        { fill: #6ee7b7; }
+    .cmd           { fill: #f8fafc; }
+    .flag          { fill: #93c5fd; }
+    .comment       { fill: #64748b; }
+    .accent        { fill: #2dd4bf; }
+    .agent-pill    { fill: #1f2a48; stroke: #324370; stroke-width: 1; }
+    .agent-text    { fill: #cbd5e1; font-weight: 600; }
+    .arrow         { stroke: #2dd4bf; stroke-width: 2; fill: none; }
+    .arrow-head    { fill: #2dd4bf; }
+    .mcp-box       { fill: #0ea5a5; }
+    .mcp-text      { fill: #0b1220; font-weight: 700; }
+    .tagline       { fill: #94a3b8; }
+
+    @media (prefers-color-scheme: light) {
+      .bg          { fill: #f8fafc; }
+      .panel       { fill: #ffffff; stroke: #cbd5e1; }
+      .panel-bar   { fill: #e2e8f0; }
+      .prompt      { fill: #047857; }
+      .cmd         { fill: #0f172a; }
+      .flag        { fill: #1d4ed8; }
+      .comment     { fill: #64748b; }
+      .agent-pill  { fill: #ffffff; stroke: #94a3b8; }
+      .agent-text  { fill: #0f172a; }
+      .arrow       { stroke: #0d9488; }
+      .arrow-head  { fill: #0d9488; }
+      .mcp-box     { fill: #0d9488; }
+      .mcp-text    { fill: #ffffff; }
+      .tagline     { fill: #475569; }
+    }
+  </style>
+
+  <rect class="bg" width="1200" height="360"/>
+
+  <!-- Terminal panel (left, the source: npx tracklution) -->
+  <g transform="translate(40, 50)">
+    <rect class="panel" width="420" height="220" rx="10"/>
+    <rect class="panel-bar" width="420" height="32" rx="10"/>
+    <rect class="panel-bar" y="22" width="420" height="10"/>
+    <circle class="dot-r" cx="18" cy="16" r="6"/>
+    <circle class="dot-y" cx="38" cy="16" r="6"/>
+    <circle class="dot-g" cx="58" cy="16" r="6"/>
+    <text class="text-mono" font-size="11" fill="#94a3b8" x="210" y="20" text-anchor="middle">tracklution</text>
+
+    <g transform="translate(24, 64)" class="text-mono" font-size="15">
+      <text>
+        <tspan class="prompt">$</tspan>
+        <tspan class="cmd" dx="8">npx</tspan>
+        <tspan class="cmd" dx="6">tracklution</tspan>
+        <tspan class="flag" dx="6">--json</tspan>
+      </text>
+      <text y="34" class="comment">{ "mcp_url": "https://mcp.tracklution.com/mcp",</text>
+      <text y="56" class="comment">  "install_methods": { "cursor": ..., "claude_code": ... },</text>
+      <text y="78" class="comment">  "next_steps_for_agent": [ ... ] }</text>
+      <text y="116">
+        <tspan class="prompt">$</tspan>
+        <tspan class="cmd" dx="8">cat</tspan>
+        <tspan class="cmd" dx="6">.cursor/mcp.json</tspan>
+      </text>
+      <text y="138" class="accent">{ "mcpServers": { "tracklution": { "url": "..." } } }</text>
+    </g>
+  </g>
+
+  <!-- Arrows fanning from terminal to agent pills -->
+  <g>
+    <path class="arrow" d="M 460 110 Q 540 110 600 90" />
+    <path class="arrow-head" d="M 596 84 l 18 8 l -18 8 z" />
+    <path class="arrow" d="M 460 160 Q 540 160 600 160" />
+    <path class="arrow-head" d="M 596 154 l 18 8 l -18 8 z" />
+    <path class="arrow" d="M 460 210 Q 540 210 600 230" />
+    <path class="arrow-head" d="M 596 224 l 18 8 l -18 8 z" />
+  </g>
+
+  <!-- Agent pills (middle column) -->
+  <g class="text-sans" font-size="15">
+    <g transform="translate(610, 75)">
+      <rect class="agent-pill" width="200" height="34" rx="17"/>
+      <text class="agent-text" x="100" y="22" text-anchor="middle">Cursor</text>
+    </g>
+    <g transform="translate(610, 145)">
+      <rect class="agent-pill" width="200" height="34" rx="17"/>
+      <text class="agent-text" x="100" y="22" text-anchor="middle">Claude Code</text>
+    </g>
+    <g transform="translate(610, 215)">
+      <rect class="agent-pill" width="200" height="34" rx="17"/>
+      <text class="agent-text" x="100" y="22" text-anchor="middle">Codex · Windsurf · Cline · &</text>
+    </g>
+  </g>
+
+  <!-- Arrows converging to MCP block -->
+  <g>
+    <path class="arrow" d="M 810 92 Q 920 92 980 160" />
+    <path class="arrow-head" d="M 977 154 l 12 14 l -16 4 z" />
+    <path class="arrow" d="M 810 162 L 980 162" />
+    <path class="arrow-head" d="M 976 156 l 18 8 l -18 8 z" />
+    <path class="arrow" d="M 810 232 Q 920 232 980 168" />
+    <path class="arrow-head" d="M 976 170 l 16 4 l -12 14 z" />
+  </g>
+
+  <!-- MCP destination block (right) -->
+  <g transform="translate(984, 110)">
+    <rect class="mcp-box" width="170" height="110" rx="10"/>
+    <text class="text-sans mcp-text" x="85" y="44" text-anchor="middle" font-size="22">MCP</text>
+    <text class="text-mono mcp-text" x="85" y="74" text-anchor="middle" font-size="11">mcp.tracklution.com</text>
+    <text class="text-mono mcp-text" x="85" y="92" text-anchor="middle" font-size="11">/mcp</text>
+  </g>
+
+  <!-- Tagline (bottom) -->
+  <text class="text-sans tagline" x="600" y="320" text-anchor="middle" font-size="18">
+    One command. Any AI coding agent. Server-side tracking, live in minutes.
+  </text>
+</svg>

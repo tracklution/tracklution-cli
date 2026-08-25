@@ -12,6 +12,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["bin", "src", "tests"],
-  "exclude": ["node_modules", "aliases"]
+  "include": ["packages/*/bin", "packages/*/src", "tests"],
+  "exclude": ["node_modules", "**/node_modules"]
 }

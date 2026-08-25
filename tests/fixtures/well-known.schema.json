@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tracklution.com/schemas/well-known.schema.json",
+  "title": "Tracklution Service Directory",
+  "description": "Schema for https://www.tracklution.com/.well-known/tracklution.json — the always-on service-directory document AI agents consult to discover Tracklution's surfaces.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "agent_install_md",
+    "install_recipes",
+    "mcp_url",
+    "api_base_url",
+    "signup_url",
+    "dashboard_url",
+    "mcp_install_methods"
+  ],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "openapi": { "type": "string", "format": "uri" },
+    "install_recipes": {
+      "type": "string",
+      "const": "https://www.tracklution.com/api/install-recipes/"
+    },
+    "agent_install_md": {
+      "type": "string",
+      "const": "https://www.tracklution.com/agent-install.md"
+    },
+    "agent_install_html": { "type": "string", "format": "uri" },
+    "docs": { "type": "string", "format": "uri" },
+    "llms_txt": { "type": "string", "format": "uri" },
+    "llms_full_txt": { "type": "string", "format": "uri" },
+    "signup_url": { "type": "string", "format": "uri" },
+    "dashboard_url": { "type": "string", "format": "uri" },
+    "mcp_url": {
+      "type": "string",
+      "const": "https://mcp.tracklution.com/mcp"
+    },
+    "api_base_url": {
+      "type": "string",
+      "pattern": "^https://api\\.trlution\\.com/"
+    },
+    "mcp_install_methods": {
+      "type": "object",
+      "required": ["cursor", "claude_code", "codex", "windsurf", "lovable", "replit", "bolt"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "agent_client_value"]
+      }
+    },
+    "support_email": { "type": "string", "format": "email" }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tracklution.com/schemas/install-recipes.schema.json",
+  "title": "Tracklution Install Recipes (live response)",
+  "description": "Schema for https://www.tracklution.com/api/install-recipes/. Mirrors the contract enforced by tracklution-app/src/app/api/install-recipes/route.test.ts.",
+  "type": "object",
+  "required": [
+    "version",
+    "signup_url",
+    "dashboard_url",
+    "agent_protocol_url",
+    "mcp_url",
+    "api_base_url",
+    "pixel_snippet_instructions",
+    "mcp_install_methods",
+    "frameworks",
+    "standard_events"
+  ],
+  "not": {
+    "required": ["pixel_init_snippet_template"]
+  },
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "signup_url": { "type": "string", "format": "uri" },
+    "dashboard_url": { "type": "string", "format": "uri" },
+    "agent_protocol_url": {
+      "type": "string",
+      "const": "https://www.tracklution.com/agent-install.md"
+    },
+    "mcp_url": {
+      "type": "string",
+      "const": "https://mcp.tracklution.com/mcp"
+    },
+    "api_base_url": {
+      "type": "string",
+      "pattern": "^https://api\\.trlution\\.com/mcp-api/"
+    },
+    "pixel_snippet_instructions": {
+      "type": "string",
+      "pattern": "[Dd]ashboard"
+    },
+    "mcp_install_methods": {
+      "type": "object",
+      "minProperties": 7,
+      "required": ["cursor", "claude_code", "codex", "windsurf", "lovable", "replit", "bolt"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "agent_client_value"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["file-edit", "cli", "user-action"]
+          },
+          "agent_client_value": {
+            "type": "string",
+            "enum": ["cursor", "claude-code", "windsurf", "lovable", "replit", "bolt", "cline", "other"]
+          },
+          "target_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "merge_key": { "type": "string" },
+          "body": { "type": "object" },
+          "body_toml": { "type": "string" },
+          "command": { "type": "string" },
+          "ui_path": { "type": "string" },
+          "value": { "type": "string" },
+          "instruction": { "type": "string" },
+          "deeplink": { "type": "string" },
+          "min_version": { "type": "string" },
+          "post_install_message": { "type": "string" }
+        }
+      },
+      "properties": {
+        "cursor": {
+          "properties": {
+            "type": { "const": "file-edit" },
+            "body": {
+              "type": "object",
+              "required": ["url"],
+              "properties": {
+                "url": { "const": "https://mcp.tracklution.com/mcp" }
+              }
+            }
+          }
+        },
+        "claude_code": {
+          "properties": {
+            "type": { "const": "cli" },
+            "command": {
+              "type": "string",
+              "pattern": "^claude mcp add --transport http tracklution https://",
+              "not": { "pattern": "streamable-http" }
+            }
+          }
+        },
+        "windsurf": {
+          "properties": {
+            "type": { "const": "file-edit" },
+            "body": {
+              "type": "object",
+              "required": ["serverUrl"],
+              "properties": {
+                "serverUrl": { "const": "https://mcp.tracklution.com/mcp" }
+              }
+            }
+          }
+        },
+        "codex": {
+          "properties": {
+            "type": { "const": "file-edit" },
+            "body_toml": {
+              "type": "string",
+              "pattern": "mcp\\.tracklution\\.com/mcp"
+            }
+          }
+        }
+      }
+    },
+    "frameworks": {
+      "type": "object",
+      "required": ["nextjs", "html", "shopify", "gtm"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["method", "where_to_paste", "doc_url"],
+        "properties": {
+          "method": { "type": "string" },
+          "where_to_paste": { "type": "string" },
+          "doc_url": {
+            "type": "string",
+            "pattern": "^https://www\\.tracklution\\.com/docs/"
+          }
+        }
+      }
+    },
+    "standard_events": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["name", "required_params", "optional_params", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "required_params": { "type": "array", "items": { "type": "string" } },
+          "optional_params": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" }
+        }
+      },
+      "contains": {
+        "type": "object",
+        "properties": {
+          "name": { "const": "Purchase" }
+        },
+        "required": ["name"]
+      }
+    }
+  }
+}

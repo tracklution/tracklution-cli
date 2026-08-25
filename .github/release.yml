@@ -1,0 +1,34 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+    authors:
+      - dependabot
+      - github-actions
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking
+    - title: New features
+      labels:
+        - feature
+        - enhancement
+    - title: Bug fixes
+      labels:
+        - fix
+        - bug
+    - title: New agent-client support
+      labels:
+        - agent-support
+    - title: Documentation
+      labels:
+        - docs
+        - documentation
+    - title: Chores
+      labels:
+        - chore
+        - refactor
+    - title: Other
+      labels:
+        - "*"

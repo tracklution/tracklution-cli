@@ -1,0 +1,40 @@
+{%- comment -%}
+  PLACEHOLDER — DO NOT COPY VERBATIM.
+
+  AGENT: when installing Tracklution, this is where the tracking <script>
+  belongs (right before the closing </body> tag of layout/theme.liquid).
+  Replace this comment + the script block below with the verbatim output of
+  the MCP's `get_installation_scripts` tool called with framework: "html"
+  and event_source_system: "shopify".
+
+  The `<TRACKLUTION_TAG_ID>` placeholder is intentional — the real tag ID is
+  per-account.
+{%- endcomment -%}
+
+<!DOCTYPE html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  {{ content_for_header }}
+  {{ 'theme.css' | asset_url | stylesheet_tag }}
+</head>
+
+<body class="template-{{ template.name | handle }}">
+  <header role="banner">
+    {% section 'header' %}
+  </header>
+
+  <main role="main">
+    {{ content_for_layout }}
+  </main>
+
+  <footer role="contentinfo">
+    {% section 'footer' %}
+  </footer>
+
+  {%- comment -%} AGENT: paste the real tracking <script> below {%- endcomment -%}
+  <script
+    async
+    src="https://<TRACKLUTION_TAG_ID>.tracklution.com/t.js"
+  ></script>
+</body>
+</html>

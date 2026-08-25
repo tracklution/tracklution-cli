@@ -1,0 +1,65 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
+      - 'examples/**'
+      - 'tests/fixtures/**'
+      - '.github/workflows/docs.yml'
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: links + asset gates (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lychee link-check (all markdown)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --max-concurrency 4 --exclude-loopback --exclude-private './**/*.md'
+          fail: true
+      - name: demo-size-gate (≤ 2 MB)
+        if: ${{ hashFiles('docs/assets/demo.gif') != '' }}
+        run: |
+          set -e
+          size=$(stat -c%s docs/assets/demo.gif)
+          echo "demo.gif size: ${size} bytes"
+          if [ "$size" -gt 2097152 ]; then
+            echo "::error::docs/assets/demo.gif is ${size} bytes (> 2 MiB). Re-optimize with: gifsicle -O3 --colors 128 -o demo.gif demo.gif.raw"
+            exit 1
+          fi
+
+  discovery-surface:
+    name: discovery-surface contract (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: install ajv-cli
+        run: npm install -g ajv-cli@^5 ajv-formats@^3
+      - name: fetch live install-recipes
+        run: curl -fsS https://www.tracklution.com/api/install-recipes/ -o /tmp/install-recipes.json
+      - name: validate install-recipes against schema
+        run: ajv validate -c ajv-formats --strict=false -s tests/fixtures/install-recipes.schema.json -d /tmp/install-recipes.json
+      - name: fetch live well-known
+        run: curl -fsS https://www.tracklution.com/.well-known/tracklution.json -o /tmp/well-known.json
+      - name: validate well-known against schema
+        run: ajv validate -c ajv-formats --strict=false -s tests/fixtures/well-known.schema.json -d /tmp/well-known.json
+      - name: fetch live agent-install.md
+        run: curl -fsS https://www.tracklution.com/agent-install.md -o /tmp/agent-install.md
+      - name: validate agent-install.md grep-rules
+        run: bash tests/fixtures/agent-install.grep-rules.sh /tmp/agent-install.md

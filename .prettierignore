@@ -1,0 +1,9 @@
+node_modules
+coverage
+package-lock.json
+docs/assets/*.gif
+docs/assets/*.png
+docs/assets/*.svg
+docs/assets/badges/*.svg
+*.tape
+.tmp

@@ -1,0 +1,96 @@
+name: Bug Report
+description: Report a problem with the tracklution CLI or one of its alias packages.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the bug report. Please fill in as much as you can — the
+        version, OS, and full terminal output are the three things we need
+        most often.
+  - type: input
+    id: cli_version
+    attributes:
+      label: tracklution CLI version
+      description: Output of `npx tracklution --version`.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: node_version
+    attributes:
+      label: Node version
+      description: Output of `node --version`.
+      placeholder: "v20.11.0"
+    validations:
+      required: true
+  - type: input
+    id: npm_version
+    attributes:
+      label: npm version
+      description: Output of `npm --version`.
+      placeholder: "10.2.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - WSL
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: agent_client
+    attributes:
+      label: AI agent client (if applicable)
+      description: |
+        Which AI coding agent triggered the issue?
+        Note: "Codex CLI" maps to the backend `agent_client: "other"` enum because
+        Codex is not yet a stable enum value. Pick the user-facing name here.
+      options:
+        - "—"
+        - Cursor
+        - Claude Code
+        - Codex CLI
+        - Windsurf
+        - Cline
+        - Lovable
+        - Replit Agent
+        - Bolt
+        - Aider
+        - Continue
+        - Zed
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: A clear description of the actual behaviour and the expected behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that reliably trigger the bug.
+      placeholder: |
+        1. Run `npx tracklution --json`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: terminal_output
+    attributes:
+      label: Full terminal output
+      description: Paste the full terminal output, including any stack trace. Use a code block.
+      render: shell
+    validations:
+      required: false

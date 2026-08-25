@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: node ${{ matrix.node }} on ${{ matrix.os }}
@@ -28,6 +31,9 @@ jobs:
           cache: npm
       - name: install
         run: npm ci
+      - name: audit signatures (supply-chain hygiene)
+        run: npm audit signatures
+        continue-on-error: true
       - name: lint (syntax check)
         run: npm run lint
       - name: test

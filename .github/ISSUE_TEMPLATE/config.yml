@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Q&A / Support
+    url: https://github.com/tracklution/tracklution-cli/discussions/categories/q-a
+    about: Ask a question, get help with installation, or troubleshoot a specific setup. Discussions are better than issues for these.
+  - name: Show and Tell
+    url: https://github.com/tracklution/tracklution-cli/discussions/categories/show-and-tell
+    about: Share a project, a screenshot, or an integration you built with Tracklution.
+  - name: Tracklution product issue (not the CLI)
+    url: https://www.tracklution.com/contact
+    about: For dashboard / billing / tracking-platform issues, please contact support directly — those are not handled in this repo.

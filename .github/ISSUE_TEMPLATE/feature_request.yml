@@ -1,0 +1,39 @@
+name: Feature Request
+description: Suggest a new feature, a new AI agent client to support, or an improvement.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If you are requesting support for a new AI coding agent, please include
+        a link to the agent's MCP-configuration documentation so we can verify
+        the target file path and config schema.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve? What use case does this unlock?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you've thought about, and why you discarded them.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, screenshots, references — anything that helps us understand the request.
+    validations:
+      required: false
