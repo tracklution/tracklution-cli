@@ -1,6 +1,7 @@
 {
   "name": "tracklution",
-  "version": "1.0.0",
+  "mcpName": "com.tracklution/server-side-tracking",
+  "version": "3.2.1",
   "description": "Install Tracklution server-side conversion tracking. Add the Tracklution MCP at https://mcp.tracklution.com/mcp and let your AI coding agent finish the install. Protocol: https://www.tracklution.com/agent-install.md",
   "keywords": [
     "tracklution",

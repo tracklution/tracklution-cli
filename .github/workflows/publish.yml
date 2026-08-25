@@ -34,7 +34,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           echo "tag (stripped) = $TAG"
-          for PKG in packages/tracklution packages/create-tracklution packages/at-tracklution-cli packages/tracklution-mcp; do
+          for PKG in packages/tracklution packages/create-tracklution packages/at-tracklution-cli packages/tracklution-mcp packages/server-side-tracking packages/conversion-tracking packages/conversion-api; do
             V=$(node -p "require('./$PKG/package.json').version")
             echo "$PKG -> $V"
             if [ "$V" != "$TAG" ]; then
@@ -89,4 +89,34 @@ jobs:
             npm publish --workspace tracklution-mcp --provenance --access public --dry-run
           else
             npm publish --workspace tracklution-mcp --provenance --access public
+          fi
+
+      - name: publish server-side-tracking
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm publish --workspace server-side-tracking --provenance --access public --dry-run
+          else
+            npm publish --workspace server-side-tracking --provenance --access public
+          fi
+
+      - name: publish conversion-tracking
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm publish --workspace conversion-tracking --provenance --access public --dry-run
+          else
+            npm publish --workspace conversion-tracking --provenance --access public
+          fi
+
+      - name: publish conversion-api
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm publish --workspace conversion-api --provenance --access public --dry-run
+          else
+            npm publish --workspace conversion-api --provenance --access public
           fi

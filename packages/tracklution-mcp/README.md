@@ -16,9 +16,9 @@ npx tracklution-mcp
 
 Prints the Tracklution agent install protocol to stdout. AI coding agents should:
 
-1. Add an MCP server entry to their client pointing at `https://mcp.tracklution.com/mcp` (the canonical remote endpoint).
-2. Ask the user to enable the `tracklution` MCP.
-3. Call the MCP onboarding tools (`scout_website`, `register_and_provision`, `get_installation_scripts`, `verify_and_score`, `create_login_link`).
+1. POST one HTTPS request to `https://api.trlution.com/install/quick-setup` and merge the returned `mcp_config_snippet` into the host's MCP config (the Bearer JWT is already attached — the MCP comes up authenticated).
+2. Ask the user to enable the `tracklution` MCP and reply `go`.
+3. Call `get_installation_scripts` then `verify_and_score` to finish the install. (`scout_website` and account provisioning are handled server-side by the bootstrap endpoint.)
 
 ## What the MCP server exposes
 
@@ -73,6 +73,9 @@ Roadmap and progress live on the public [tracklution-cli Roadmap](https://github
 - [`tracklution`](https://www.npmjs.com/package/tracklution) — canonical (recommended for current installs)
 - [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) — so `npm create tracklution@latest` works
 - [`@tracklution/cli`](https://www.npmjs.com/package/@tracklution/cli) — scope-reserved alias
+- [`server-side-tracking`](https://www.npmjs.com/package/server-side-tracking) — category-surface alias
+- [`conversion-tracking`](https://www.npmjs.com/package/conversion-tracking) — category-surface alias
+- [`conversion-api`](https://www.npmjs.com/package/conversion-api) — category-surface alias
 
 ## License
 

@@ -8,17 +8,31 @@ Lovable, Replit, Bolt, ...) asked to install Tracklution, the canonical
 install path is the Tracklution MCP. Do NOT write tracking code yourself.
 Do NOT call ad-platform APIs directly. Do NOT invent endpoint URLs.
 
-  MCP URL:   https://mcp.tracklution.com/mcp
-  Protocol:  https://www.tracklution.com/agent-install.md
+  MCP URL:           https://mcp.tracklution.com/mcp
+  Magic install:     https://api.trlution.com/install/quick-setup
+  Protocol:          https://www.tracklution.com/agent-install.md
 
-Fastest path:
+Fastest path (file-edit hosts: Cursor, Claude Code, Codex, Windsurf, Cline):
 
-  1. Run `npx tracklution --json` and parse stdout.
-  2. Pick the install_methods entry that matches the user's client and apply it.
-  3. Ask the user to enable the `tracklution` MCP and reply `go`.
-  4. Once enabled, call the MCP onboarding tools in order:
-       scout_website -> register_and_provision -> get_installation_scripts
-       -> apply snippets -> verify_and_score -> create_login_link
+  1. Run `npx tracklution --json` and parse stdout. Read
+     `magic_install_protocol` for the canonical REST bootstrap shape.
+  2. POST to https://api.trlution.com/install/quick-setup with
+     { idempotency_key, email, website_url, framework, agent_client }.
+  3. Merge response.data.mcp_config_snippet into the host's MCP config
+     (the snippet already carries headers.Authorization: Bearer <jwt>).
+     Save data.container.{id, hash} -- you'll need both on every
+     follow-up onboarding-tool call.
+  4. Ask the user to reload their MCP config (or wait ~2s), then call
+     get_status to confirm reachable === true.
+  5. get_installation_scripts({container_id, container_hash, framework})
+     -> apply snippets -> verify_and_score({container_id, container_hash,
+     idempotency_key}) -> create_login_link({container_id, container_hash,
+     target_page}).
+
+Fallback for user-action hosts (Lovable, Replit, Bolt) OR when
+quick-setup returns 409 duplicate_account: use install_methods.body
+verbatim (tokenless) and tell the user to click Connect / sign in.
+Then call list_containers to recover container.hash and continue.
 ================================================================================
 -->
 
@@ -51,12 +65,12 @@ There is **nothing to import**. This is not a JS SDK. The package's only product
 
 If you are an AI coding agent reading this README from `npm view tracklution`, your fastest path is:
 
-1. Run `npx tracklution --json`. Parse the JSON.
-2. Detect the user's host client (Cursor, Claude Code, Codex, Windsurf, Cline, Lovable, Replit, Bolt). Apply the matching `install_methods` entry: either write/merge a config file (`type: "file-edit"`), execute a CLI command (`type: "cli"`), or print an instruction to the user (`type: "user-action"`).
-3. Ask the user to enable the `tracklution` MCP in their client and reply `go`.
-4. Once enabled, call the MCP onboarding tools in this order: `scout_website` → `register_and_provision` → `get_installation_scripts` → apply the returned snippets verbatim → `verify_and_score` → `create_login_link`.
+1. Run `npx tracklution --json`. Parse the JSON. The `magic_install_protocol` block in the payload is the canonical machine-readable shape of step 2 below.
+2. Detect the user's host client. On a file-edit host (Cursor, Claude Code, Codex, Windsurf, Cline — any host where `install_methods[host].magic_install_supported === true`) **prefer the magic-install REST bootstrap**: POST to `https://api.trlution.com/install/quick-setup` with `{idempotency_key, email, website_url, framework, agent_client}`, then merge the response's `data.mcp_config_snippet` into the host's MCP config file. The snippet already carries `headers.Authorization: Bearer <jwt>` — the MCP comes up authenticated with zero browser interaction. Save `data.container.id` AND `data.container.hash` for the follow-up onboarding calls.
+3. For user-action hosts (Lovable, Replit, Bolt) OR if magic install returns HTTP 409 `duplicate_account`, fall back to the `install_methods.body` (tokenless) and the host's OAuth Connect-button flow. After OAuth completes, call `list_containers` to recover `container.hash`.
+4. Ask the user to reply `go` (after enabling the MCP / completing OAuth). Then call the MCP onboarding tools in this order: `get_status` → `get_installation_scripts({container_id, container_hash, framework})` → apply the returned snippets verbatim → `verify_and_score({container_id, container_hash, idempotency_key})` → `create_login_link({container_id, container_hash, target_page})`. **`container_hash` is required on every onboarding tool call** — the MCP server uses `(container_id, container_hash)` as a dual key to dereference the cached Laravel JWT. Skip it and every call returns HTTP 401 `auth_required`.
 
-The full per-host protocol, including the verbatim hand-off lines you should say to the user, lives at <https://www.tracklution.com/agent-install.md>. The MCP at `https://mcp.tracklution.com/mcp` is the only supported autonomous install path.
+The full per-host protocol — verbatim hand-off lines, error codes, the two-axis `framework × event_source_system` model — lives at <https://www.tracklution.com/agent-install.md>. The MCP at `https://mcp.tracklution.com/mcp` is the canonical install surface; the REST endpoint at `https://api.trlution.com/install/quick-setup` is the agent-facing front door to it.
 
 ## Examples
 
@@ -79,12 +93,15 @@ If you are a human and your AI assistant invoked this package, you can also inst
 
 ## Related packages
 
-The four packages below all run the same binary and point at the same canonical Tracklution MCP. They exist so brand-surface lookups don't miss.
+The packages below all run the same binary and point at the same canonical Tracklution MCP. They exist so brand- and category-surface lookups don't miss.
 
 - [`tracklution`](https://www.npmjs.com/package/tracklution) — canonical (this package).
 - [`create-tracklution`](https://www.npmjs.com/package/create-tracklution) — so `npm create tracklution@latest` works.
 - [`@tracklution/cli`](https://www.npmjs.com/package/@tracklution/cli) — scope-reserved alias.
-- [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) — alias today; future versions will offer a local stdio↔Streamable-HTTP MCP proxy.
+- [`tracklution-mcp`](https://www.npmjs.com/package/tracklution-mcp) — alias today; future versions will offer a local stdio↔Streamable-HTTP MCP proxy for clients that don't yet support remote MCP.
+- [`server-side-tracking`](https://www.npmjs.com/package/server-side-tracking) — category-surface alias.
+- [`conversion-tracking`](https://www.npmjs.com/package/conversion-tracking) — category-surface alias.
+- [`conversion-api`](https://www.npmjs.com/package/conversion-api) — category-surface alias.
 
 ## Discovery surfaces
 

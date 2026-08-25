@@ -15,6 +15,9 @@ const aliases = [
   { dir: 'packages/create-tracklution', name: 'create-tracklution' },
   { dir: 'packages/at-tracklution-cli', name: '@tracklution/cli' },
   { dir: 'packages/tracklution-mcp', name: 'tracklution-mcp' },
+  { dir: 'packages/server-side-tracking', name: 'server-side-tracking' },
+  { dir: 'packages/conversion-tracking', name: 'conversion-tracking' },
+  { dir: 'packages/conversion-api', name: 'conversion-api' },
 ];
 
 describe('version lockstep', () => {
