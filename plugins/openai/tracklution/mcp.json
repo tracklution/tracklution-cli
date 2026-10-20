@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "tracklution": {
+      "type": "streamable-http",
+      "url": "https://mcp.tracklution.com/mcp"
+    }
+  }
+}
