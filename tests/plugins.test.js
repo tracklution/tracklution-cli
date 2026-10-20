@@ -64,8 +64,8 @@ describe("Claude plugin bundle (WI-4)", () => {
       expect(fs.existsSync(skillFile)).toBe(true);
       const content = fs.readFileSync(skillFile, "utf8");
 
-      expect(content.startsWith("---\n")).toBe(true);
-      const parts = content.split("---\n");
+      expect(/^---\r?\n/.test(content)).toBe(true);
+      const parts = content.split(/---\r?\n/);
       expect(parts.length).toBeGreaterThanOrEqual(3);
       const frontmatter = parts[1];
       const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
