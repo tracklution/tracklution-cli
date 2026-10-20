@@ -1,0 +1,16 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.tracklution/server-side-tracking",
+  "description": "Server-side conversion tracking, installed and configured by your AI coding agent.",
+  "repository": {
+    "url": "https://github.com/tracklution/tracklution-cli",
+    "source": "github"
+  },
+  "version": "3.3.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.tracklution.com/mcp"
+    }
+  ]
+}
