@@ -1,0 +1,57 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tracklution",
+  "version": "1.0.0",
+  "description": "Install and verify Tracklution server-side conversion tracking, and answer questions about your tracking data, through the Tracklution MCP server.",
+  "author": { "name": "Tracklution", "url": "https://www.tracklution.com" },
+  "homepage": "https://www.tracklution.com/docs/tracklution-mcp/",
+  "repository": "https://github.com/tracklution/tracklution-cli",
+  "license": "MIT",
+  "keywords": ["tracking", "conversion-tracking", "server-side-tracking", "analytics", "mcp"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Tracklution",
+        "shortDescription": "Tracking setup and analytics",
+        "longDescription": "Tracklution is server-side conversion tracking for websites. Connect your Tracklution account to ask about your tracking data in plain language: conversions, revenue, events, sessions and data quality (consent, ad blockers and delivery to ad platforms) for every tracking container your account can access. Tracklution can also guide a new installation: it checks your website, creates your account and first container, returns the tracking snippets for your platform and verifies that events arrive. Analytics tools only read data; installation steps create an account or change container settings. Analytics requires a Tracklution account; sign-in uses OAuth.",
+        "developerName": "Tracklution",
+        "category": "Productivity",
+        "capabilities": ["Answer tracking data questions", "Install and verify tracking"],
+        "websiteURL": "https://www.tracklution.com",
+        "supportURL": "https://www.tracklution.com/docs/tracklution-mcp/",
+        "privacyPolicyURL": "https://www.tracklution.com/policies/privacy-policy/",
+        "termsOfServiceURL": "https://www.tracklution.com/policies/terms/",
+        "defaultPrompt": [
+          "How many conversions did my website track last week compared to the week before?",
+          "Is my tracking healthy? Check data quality, consent and ad blockers.",
+          "Help me install Tracklution tracking on my website."
+        ],
+        "brandColor": "#FA541C",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      },
+      "onboardingSkill": "./skills/install-tracklution/SKILL.md",
+      "review": {
+        "test_cases": {
+          "positive": [
+            { "description": "Weekly conversion summary", "prompt": "How many conversions did my Tracklution containers track last week?", "tools_triggered": "list_containers, get_summary", "expected_behavior": "Lists the account's containers and reports last week's conversion counts per container from the summary, without inventing numbers." },
+            { "description": "Daily revenue trend", "prompt": "Show daily purchases and revenue for my main website over the last 30 days.", "tools_triggered": "list_containers, get_report", "expected_behavior": "Returns a day-by-day series of purchases and revenue for the chosen container and date range." },
+            { "description": "Data quality check", "prompt": "Is my tracking data healthy? Check consent, ad blockers and delivery.", "tools_triggered": "list_containers, get_insights", "expected_behavior": "Summarizes the insights findings for the container: consent, ad-blocker recovery and delivery issues." },
+            { "description": "Recent purchase events", "prompt": "List the 10 most recent Purchase events with their order values.", "tools_triggered": "list_containers, query_events", "expected_behavior": "Returns up to 10 recent Purchase events with timestamps and values." },
+            { "description": "Container details", "prompt": "Show the settings of my main tracking container.", "tools_triggered": "list_containers, get_container", "expected_behavior": "Shows the chosen container's name, website and tracking configuration without exposing secrets." }
+          ],
+          "negative": [
+            { "description": "Data deletion is not supported", "prompt": "Delete all tracking data from my container.", "expected_behavior": "Explains that Tracklution cannot delete data from chat and points to the dashboard; calls no write tool." },
+            { "description": "Another company's data", "prompt": "Show me the conversion numbers of competitor.com.", "expected_behavior": "Explains it can only read containers the connected account can access; does not guess or fabricate data." },
+            { "description": "Ad budget changes are out of scope", "prompt": "Raise my Google Ads budget by 20%.", "expected_behavior": "Declines: Tracklution reports tracking data and does not manage ad platform budgets." }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Tracklution does not sell products or process payments in ChatGPT."
+      },
+      "publication": {
+        "release_notes": "Initial release: analytics questions and guided installation through the Tracklution MCP server."
+      }
+    }
+  }
+}

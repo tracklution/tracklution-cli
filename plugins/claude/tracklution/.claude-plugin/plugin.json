@@ -1,0 +1,20 @@
+{
+  "name": "tracklution",
+  "displayName": "Tracklution",
+  "version": "1.0.0",
+  "description": "Install and verify Tracklution server-side conversion tracking, and answer questions about your tracking data, through the Tracklution connector.",
+  "author": {
+    "name": "Tracklution",
+    "url": "https://www.tracklution.com"
+  },
+  "homepage": "https://www.tracklution.com/docs/tracklution-mcp/",
+  "repository": "https://github.com/tracklution/tracklution-cli",
+  "license": "MIT",
+  "keywords": [
+    "tracking",
+    "conversion-tracking",
+    "server-side-tracking",
+    "analytics",
+    "mcp"
+  ]
+}

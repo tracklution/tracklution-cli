@@ -36,3 +36,13 @@ jobs:
         run: npm test
       - name: pack dry-run (all four packages)
         run: npm run pack:dry
+      - name: build OpenAI plugin ZIP
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22 && hashFiles('plugins/openai/tracklution/assets/icon.png') != ''
+        run: npm run build:openai-plugin
+      - name: upload OpenAI plugin ZIP
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22 && hashFiles('plugins/openai/tracklution/assets/icon.png') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: tracklution-openai-plugin
+          path: dist/tracklution-openai-plugin-*.zip
+          if-no-files-found: error
