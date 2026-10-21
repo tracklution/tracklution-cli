@@ -11,9 +11,8 @@ Follow this structured workflow to install and verify server-side tracking on th
    Call `scout_website` with `website_url` to detect CMS/framework hints, suggested installation methods, and receive `onboarding_session_id`.
 
 2. **Register or provision container:**
-   Call `register_and_provision` with `website_url`, `onboarding_session_id`, and `idempotency_key` (UUID v7).
-   - If user provides email/name, supply them to create an account and obtain `auth_token`.
-   - If an existing container is returned, capture `container_id` and `container_hash`.
+   Call `register_and_provision` with `website_url`, `framework`, `agent_client`, `onboarding_session_id`, and `idempotency_key` (UUID v7).
+   - Captures the resulting or existing container (`container_id` and `container_hash`).
 
 3. **Fetch tracking snippets:**
    Call `get_installation_scripts` with `container_id` and `framework`.
@@ -32,7 +31,7 @@ Follow this structured workflow to install and verify server-side tracking on th
 
 6. **Next steps and hand-off:**
    Call `get_next_steps` with `container_id` to inspect remaining tasks (`overall_progress`, `next_steps[]`).
-   Call `create_login_link` with `container_id` to generate a one-time dashboard access link for the user.
+   Call `create_login_link` with `container_id` and `idempotency_key` to generate a one-time dashboard access link for the user.
 
 ## Operational Rules
 

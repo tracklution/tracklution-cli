@@ -100,6 +100,19 @@ describe("Claude plugin bundle (WI-4)", () => {
           expect(TOOL_NAMES).toContain(raw);
         }
       }
+
+      if (folder === "tracklution-analytics") {
+        expect(content).toContain("date_from");
+        expect(content).toContain("date_to");
+        expect(content).not.toContain("start_date");
+        expect(content).not.toContain("end_date");
+      }
+
+      if (folder === "install-tracklution") {
+        expect(content).toContain("framework");
+        expect(content).toContain("agent_client");
+        expect(content).toMatch(/create_login_link.*idempotency_key/);
+      }
     }
   });
 

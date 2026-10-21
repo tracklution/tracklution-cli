@@ -15,7 +15,7 @@ The plugin supports two primary workflows:
 
 ## Data Privacy and Terms
 
-Analytics tools read only data from containers that your connected account has permission to access. Sensitive credentials such as webhook keys and access tokens are protected and never echoed to chat.
+Analytics tools only read data from containers that your connected account has permission to access. Installation steps create an account or change container settings, and scout fetches the target website to detect platform hints. Sensitive credentials such as webhook signing secrets and recovery keys remain redacted and protected.
 
 - Documentation: https://www.tracklution.com/docs/tracklution-mcp/
 - Privacy Policy: https://www.tracklution.com/policies/privacy-policy/

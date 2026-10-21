@@ -11,7 +11,7 @@ Use Tracklution MCP analytics tools to query conversion data, raw events, and tr
    Call `list_containers` first to find available tracking containers, domain names, and `container_id` identifiers.
 
 2. **Aggregated metrics and performance trends:**
-   - Call `get_summary` with `container_id` and ISO date ranges (`start_date`, `end_date`) for overall conversion counts, tracked revenue, and performance comparisons.
+   - Call `get_summary` with `container_id` and ISO date ranges (`date_from`, `date_to`) for overall conversion counts, tracked revenue, and performance comparisons.
    - Call `get_report` with `container_id` for time-series breakdowns (e.g. daily, weekly) and dimension-specific aggregates.
 
 3. **Data quality, health, and ad blocker recovery:**
