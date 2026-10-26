@@ -1,0 +1,65 @@
+name: release
+
+# Builds the OpenAI plugin ZIP and attaches it to the GitHub release of a tag,
+# so the ZIP has a public, permanent download link that needs no GitHub login:
+#
+#   https://github.com/tracklution/tracklution-cli/releases/download/<tag>/tracklution-openai-plugin-<plugin version>.zip
+#   https://github.com/tracklution/tracklution-cli/releases/latest/download/tracklution-openai-plugin.zip   (always the newest)
+#
+# Runs on every v* tag push (the ZIP is built from the tagged commit) and on
+# demand for an existing tag (the ZIP is built from the branch chosen in the
+# "Run workflow" dialog, normally main). The release is created when missing.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag whose release gets the ZIP (e.g. v3.3.0). The ZIP is built from the branch selected above.'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  openai-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: build OpenAI plugin ZIP
+        run: npm run build:openai-plugin
+
+      - name: attach the ZIP to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          VERSIONED=$(ls dist/tracklution-openai-plugin-*.zip)
+          STABLE=dist/tracklution-openai-plugin.zip
+          cp "$VERSIONED" "$STABLE"
+
+          # --verify-tag: never create a tag from here; a typo must fail, not mint a release.
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --generate-notes --verify-tag
+          fi
+          gh release upload "$TAG" "$VERSIONED" "$STABLE" --repo "$REPO" --clobber
+
+          {
+            echo "## OpenAI plugin ZIP attached to release \`$TAG\` (built from \`${GITHUB_SHA::7}\`)"
+            echo
+            echo "- https://github.com/$REPO/releases/download/$TAG/$(basename "$VERSIONED")"
+            echo "- https://github.com/$REPO/releases/latest/download/tracklution-openai-plugin.zip"
+          } >> "$GITHUB_STEP_SUMMARY"

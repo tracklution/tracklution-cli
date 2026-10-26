@@ -50,9 +50,16 @@ tracklution-cli/
     cli.test.js                  default / --json / --version / --help
     parity.test.js               compare local payload to live install-recipes endpoint
     aliases.test.js              each alias produces the same stdout as the canonical
+  plugins/
+    claude/tracklution/          Claude plugin bundle (submitted from this repo path; skills are the single copy)
+    openai/tracklution/          OpenAI plugin package source (plugin.json, mcp.json, assets/)
+  scripts/build-openai-plugin.js builds the OpenAI ZIP: package source + the Claude skills
+  server.json                    MCP Registry entry (remote only)
   .github/workflows/
-    test.yml
-    publish.yml
+    test.yml                     lint, tests, pack dry-run; uploads the OpenAI ZIP as a run artifact
+    publish.yml                  npm publish on v* tags
+    release.yml                  attaches the OpenAI ZIP to the GitHub release on v* tags (public link)
+    mcp-registry.yml             manual: publish server.json to the MCP Registry
 ```
 
 ## Development
@@ -67,6 +74,20 @@ npm run pack:dry          # dry-run npm pack for all published packages
 ## Publishing
 
 Bump the version in **every** `packages/*/package.json` (keep them in lockstep), tag `vX.Y.Z`, push to GitHub. The publish workflow at `.github/workflows/publish.yml` verifies the lockstep, then runs `npm publish --provenance` for each package in dependency order (canonical `tracklution` first, then all alias shims).
+
+The same tag push runs `.github/workflows/release.yml`, which builds the OpenAI plugin ZIP and attaches it to the tag's GitHub release (created if missing). Public download links, no GitHub login needed:
+
+- `https://github.com/tracklution/tracklution-cli/releases/download/vX.Y.Z/tracklution-openai-plugin-<plugin version>.zip`
+- `https://github.com/tracklution/tracklution-cli/releases/latest/download/tracklution-openai-plugin.zip` (always the newest release)
+
+To attach a ZIP built from `main` to an existing release without a new tag, run the `release` workflow by hand (Actions, `release`, Run workflow) with the tag name. The run summary prints the download links.
+
+### Directory listings
+
+- **ChatGPT (OpenAI):** the ZIP above is what gets uploaded at platform.openai.com/plugins. When you change anything under `plugins/openai/tracklution/` or the skills, bump `version` in `plugins/openai/tracklution/plugin.json` (OpenAI treats each upload as a new package version) and release as above. Before the first submission the portal also needs `review.demo_recording_url` in `plugin.json` and the domain-verification token served by the MCP host (`OPENAI_APPS_CHALLENGE_TOKEN`).
+- **Claude:** the directory reads `plugins/claude/tracklution` straight from this repo; there is nothing to upload. Validate locally with `claude plugin validate ./plugins/claude/tracklution --strict`.
+- **Skills live once**, in `plugins/claude/tracklution/skills/`; the OpenAI build copies them into the ZIP.
+- **MCP Registry:** bump `version` in `server.json` (a version can be published only once) and run the `mcp-registry` workflow by hand.
 
 ## Single source of truth
 
