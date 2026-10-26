@@ -44,6 +44,15 @@ describe("Claude plugin bundle (WI-4)", () => {
     expect(plugin.author?.name).toBe("Tracklution");
     expect(plugin.license).toBe("MIT");
 
+    // Directory listing fields: read by Anthropic's directory at submission, ignored by Claude Code.
+    for (const field of ["documentationUrl", "supportUrl", "privacyPolicyUrl", "termsOfServiceUrl"]) {
+      const url = new URL(plugin[field]);
+      expect(url.protocol).toBe("https:");
+      expect(url.hostname).toBe("www.tracklution.com");
+    }
+    expect(plugin.privacyPolicyUrl).toBe("https://www.tracklution.com/policies/privacy-policy/");
+    expect(plugin.icon).toBe("./assets/icon.png");
+
     const mcpJsonPath = path.join(pluginDir, ".mcp.json");
     expect(fs.existsSync(mcpJsonPath)).toBe(true);
     const mcp = JSON.parse(fs.readFileSync(mcpJsonPath, "utf8"));
@@ -127,6 +136,9 @@ describe("Claude plugin bundle (WI-4)", () => {
     const licensePath = path.join(pluginDir, "LICENSE");
     expect(fs.existsSync(licensePath)).toBe(true);
 
+    // The directory accepts text files plus complete PNG/JPEG/GIF/WebP images; the listing icon is the only binary here.
+    const iconRel = path.join("assets", "icon.png");
+
     function checkDir(dir) {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
@@ -136,7 +148,9 @@ describe("Claude plugin bundle (WI-4)", () => {
           checkDir(full);
         } else {
           const buf = fs.readFileSync(full);
-          expect(buf.includes(0)).toBe(false); // No NUL bytes (text only)
+          if (path.relative(pluginDir, full) !== iconRel) {
+            expect(buf.includes(0), `${full} must be a text file`).toBe(false);
+          }
           if (entry.name.startsWith(".")) {
             expect([".mcp.json"]).toContain(entry.name);
           }
@@ -144,6 +158,27 @@ describe("Claude plugin bundle (WI-4)", () => {
       }
     }
     checkDir(pluginDir);
+  });
+
+  it("T-4d: listing icon is a square PNG within the directory's limits", () => {
+    const plugin = JSON.parse(fs.readFileSync(path.join(pluginDir, ".claude-plugin/plugin.json"), "utf8"));
+    expect(plugin.icon).toMatch(/^\.\/assets\/[a-z0-9-]+\.png$/);
+    const file = path.join(pluginDir, plugin.icon.slice(2));
+    expect(fs.existsSync(file)).toBe(true);
+
+    const buf = fs.readFileSync(file);
+    expect(buf.length).toBeLessThan(2 * 1024 * 1024);
+    expect(buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true);
+    expect(buf.subarray(12, 16).toString("latin1")).toBe("IHDR");
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    expect(width).toBe(height);
+    expect(width).toBeGreaterThanOrEqual(512);
+    expect(width).toBeLessThanOrEqual(2048);
+
+    // One mark for both directories.
+    const openaiIcon = fs.readFileSync(path.join(REPO_ROOT, "plugins/openai/tracklution/assets/icon.png"));
+    expect(buf.equals(openaiIcon)).toBe(true);
   });
 });
 
@@ -197,11 +232,39 @@ describe("OpenAI plugin package and build (WI-5)", () => {
     expect(mcp.mcpServers.tracklution.headers).toBeUndefined();
   });
 
+  it("T-5b: committed icons are square PNGs within OpenAI's limits and match plugin.json", () => {
+    const plugin = JSON.parse(fs.readFileSync(path.join(pluginDir, "plugin.json"), "utf8"));
+    const iface = plugin.extensions["com.openai"].interface;
+    const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    for (const field of ["composerIcon", "logo"]) {
+      const rel = iface[field];
+      expect(rel).toMatch(/^\.\/assets\/[a-z0-9-]+\.png$/);
+      const file = path.join(pluginDir, rel.slice(2));
+      expect(fs.existsSync(file)).toBe(true);
+
+      const buf = fs.readFileSync(file);
+      expect(buf.length).toBeLessThanOrEqual(5 * 1024 * 1024);
+      expect(buf.subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true);
+      expect(buf.subarray(12, 16).toString("latin1")).toBe("IHDR");
+      const width = buf.readUInt32BE(16);
+      const height = buf.readUInt32BE(20);
+      expect(width).toBe(height);
+      expect(width).toBeGreaterThanOrEqual(48);
+      expect(width).toBeLessThanOrEqual(4096);
+    }
+
+    const assetFiles = fs.readdirSync(path.join(pluginDir, "assets"));
+    expect(assetFiles.sort()).toEqual(["icon.png", "logo.png"]);
+  });
+
   it("T-5c: build script ZIP creation and validations", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "openai-test-"));
     const srcDir = path.join(tmp, "src");
     const outDir = path.join(tmp, "out");
     fs.cpSync(pluginDir, srcDir, { recursive: true });
+    // The committed icons are checked by T-5b; this case exercises the build's own guard.
+    fs.rmSync(path.join(srcDir, "assets"), { recursive: true, force: true });
 
     // Missing assets test: runs on every OS
     const runMissing = spawnSync("node", [
@@ -265,6 +328,25 @@ describe("OpenAI plugin package and build (WI-5)", () => {
       const skill2Zip = execFileSync("unzip", ["-p", zipFile, "skills/tracklution-analytics/SKILL.md"]);
       const skill2Orig = fs.readFileSync(path.join(REPO_ROOT, "plugins/claude/tracklution/skills/tracklution-analytics/SKILL.md"));
       expect(skill2Zip.equals(skill2Orig)).toBe(true);
+    }
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it.skipIf(process.platform === "win32")("T-5d: the default build packs the committed icons unchanged", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "openai-real-"));
+    const run = spawnSync("node", [path.join(REPO_ROOT, "scripts/build-openai-plugin.js"), "--out", tmp], {
+      cwd: REPO_ROOT,
+    });
+    expect(run.status, run.stderr.toString()).toBe(0);
+
+    const zipFile = path.join(tmp, "tracklution-openai-plugin-1.0.0.zip");
+    expect(run.stdout.toString().trim()).toBe(zipFile);
+
+    for (const name of ["icon.png", "logo.png"]) {
+      const fromZip = execFileSync("unzip", ["-p", zipFile, `assets/${name}`]);
+      const committed = fs.readFileSync(path.join(pluginDir, "assets", name));
+      expect(fromZip.equals(committed)).toBe(true);
     }
 
     fs.rmSync(tmp, { recursive: true, force: true });
