@@ -120,7 +120,13 @@ describe("Claude plugin bundle (WI-4)", () => {
       if (folder === "install-tracklution") {
         expect(content).toContain("framework");
         expect(content).toContain("agent_client");
-        expect(content).toMatch(/create_login_link.*idempotency_key/);
+        // create_login_link's input schema requires target_page (enum: dashboard, connectors, dns, explore, settings)
+        // and container_hash when no auth_token is passed, which is the chat case.
+        const loginLine = content.split(/\r?\n/).find((l) => l.includes("Call `create_login_link`"));
+        expect(loginLine).toBeDefined();
+        for (const arg of ["container_id", "container_hash", "idempotency_key", 'target_page: "dashboard"']) {
+          expect(loginLine).toContain(`\`${arg}\``);
+        }
       }
     }
   });
