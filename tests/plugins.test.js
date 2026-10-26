@@ -197,11 +197,39 @@ describe("OpenAI plugin package and build (WI-5)", () => {
     expect(mcp.mcpServers.tracklution.headers).toBeUndefined();
   });
 
+  it("T-5b: committed icons are square PNGs within OpenAI's limits and match plugin.json", () => {
+    const plugin = JSON.parse(fs.readFileSync(path.join(pluginDir, "plugin.json"), "utf8"));
+    const iface = plugin.extensions["com.openai"].interface;
+    const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    for (const field of ["composerIcon", "logo"]) {
+      const rel = iface[field];
+      expect(rel).toMatch(/^\.\/assets\/[a-z0-9-]+\.png$/);
+      const file = path.join(pluginDir, rel.slice(2));
+      expect(fs.existsSync(file)).toBe(true);
+
+      const buf = fs.readFileSync(file);
+      expect(buf.length).toBeLessThanOrEqual(5 * 1024 * 1024);
+      expect(buf.subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true);
+      expect(buf.subarray(12, 16).toString("latin1")).toBe("IHDR");
+      const width = buf.readUInt32BE(16);
+      const height = buf.readUInt32BE(20);
+      expect(width).toBe(height);
+      expect(width).toBeGreaterThanOrEqual(48);
+      expect(width).toBeLessThanOrEqual(4096);
+    }
+
+    const assetFiles = fs.readdirSync(path.join(pluginDir, "assets"));
+    expect(assetFiles.sort()).toEqual(["icon.png", "logo.png"]);
+  });
+
   it("T-5c: build script ZIP creation and validations", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "openai-test-"));
     const srcDir = path.join(tmp, "src");
     const outDir = path.join(tmp, "out");
     fs.cpSync(pluginDir, srcDir, { recursive: true });
+    // The committed icons are checked by T-5b; this case exercises the build's own guard.
+    fs.rmSync(path.join(srcDir, "assets"), { recursive: true, force: true });
 
     // Missing assets test: runs on every OS
     const runMissing = spawnSync("node", [
@@ -265,6 +293,25 @@ describe("OpenAI plugin package and build (WI-5)", () => {
       const skill2Zip = execFileSync("unzip", ["-p", zipFile, "skills/tracklution-analytics/SKILL.md"]);
       const skill2Orig = fs.readFileSync(path.join(REPO_ROOT, "plugins/claude/tracklution/skills/tracklution-analytics/SKILL.md"));
       expect(skill2Zip.equals(skill2Orig)).toBe(true);
+    }
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it.skipIf(process.platform === "win32")("T-5d: the default build packs the committed icons unchanged", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "openai-real-"));
+    const run = spawnSync("node", [path.join(REPO_ROOT, "scripts/build-openai-plugin.js"), "--out", tmp], {
+      cwd: REPO_ROOT,
+    });
+    expect(run.status, run.stderr.toString()).toBe(0);
+
+    const zipFile = path.join(tmp, "tracklution-openai-plugin-1.0.0.zip");
+    expect(run.stdout.toString().trim()).toBe(zipFile);
+
+    for (const name of ["icon.png", "logo.png"]) {
+      const fromZip = execFileSync("unzip", ["-p", zipFile, `assets/${name}`]);
+      const committed = fs.readFileSync(path.join(pluginDir, "assets", name));
+      expect(fromZip.equals(committed)).toBe(true);
     }
 
     fs.rmSync(tmp, { recursive: true, force: true });
