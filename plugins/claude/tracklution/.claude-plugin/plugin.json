@@ -16,5 +16,10 @@
     "server-side-tracking",
     "analytics",
     "mcp"
-  ]
+  ],
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://www.tracklution.com/docs/tracklution-mcp/",
+  "supportUrl": "https://www.tracklution.com/docs/tracklution-mcp/",
+  "privacyPolicyUrl": "https://www.tracklution.com/policies/privacy-policy/",
+  "termsOfServiceUrl": "https://www.tracklution.com/policies/terms/"
 }

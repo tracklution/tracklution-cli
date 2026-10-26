@@ -44,6 +44,15 @@ describe("Claude plugin bundle (WI-4)", () => {
     expect(plugin.author?.name).toBe("Tracklution");
     expect(plugin.license).toBe("MIT");
 
+    // Directory listing fields: read by Anthropic's directory at submission, ignored by Claude Code.
+    for (const field of ["documentationUrl", "supportUrl", "privacyPolicyUrl", "termsOfServiceUrl"]) {
+      const url = new URL(plugin[field]);
+      expect(url.protocol).toBe("https:");
+      expect(url.hostname).toBe("www.tracklution.com");
+    }
+    expect(plugin.privacyPolicyUrl).toBe("https://www.tracklution.com/policies/privacy-policy/");
+    expect(plugin.icon).toBe("./assets/icon.png");
+
     const mcpJsonPath = path.join(pluginDir, ".mcp.json");
     expect(fs.existsSync(mcpJsonPath)).toBe(true);
     const mcp = JSON.parse(fs.readFileSync(mcpJsonPath, "utf8"));
@@ -127,6 +136,9 @@ describe("Claude plugin bundle (WI-4)", () => {
     const licensePath = path.join(pluginDir, "LICENSE");
     expect(fs.existsSync(licensePath)).toBe(true);
 
+    // The directory accepts text files plus complete PNG/JPEG/GIF/WebP images; the listing icon is the only binary here.
+    const iconRel = path.join("assets", "icon.png");
+
     function checkDir(dir) {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
@@ -136,7 +148,9 @@ describe("Claude plugin bundle (WI-4)", () => {
           checkDir(full);
         } else {
           const buf = fs.readFileSync(full);
-          expect(buf.includes(0)).toBe(false); // No NUL bytes (text only)
+          if (path.relative(pluginDir, full) !== iconRel) {
+            expect(buf.includes(0), `${full} must be a text file`).toBe(false);
+          }
           if (entry.name.startsWith(".")) {
             expect([".mcp.json"]).toContain(entry.name);
           }
@@ -144,6 +158,27 @@ describe("Claude plugin bundle (WI-4)", () => {
       }
     }
     checkDir(pluginDir);
+  });
+
+  it("T-4d: listing icon is a square PNG within the directory's limits", () => {
+    const plugin = JSON.parse(fs.readFileSync(path.join(pluginDir, ".claude-plugin/plugin.json"), "utf8"));
+    expect(plugin.icon).toMatch(/^\.\/assets\/[a-z0-9-]+\.png$/);
+    const file = path.join(pluginDir, plugin.icon.slice(2));
+    expect(fs.existsSync(file)).toBe(true);
+
+    const buf = fs.readFileSync(file);
+    expect(buf.length).toBeLessThan(2 * 1024 * 1024);
+    expect(buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true);
+    expect(buf.subarray(12, 16).toString("latin1")).toBe("IHDR");
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    expect(width).toBe(height);
+    expect(width).toBeGreaterThanOrEqual(512);
+    expect(width).toBeLessThanOrEqual(2048);
+
+    // One mark for both directories.
+    const openaiIcon = fs.readFileSync(path.join(REPO_ROOT, "plugins/openai/tracklution/assets/icon.png"));
+    expect(buf.equals(openaiIcon)).toBe(true);
   });
 });
 
