@@ -31,7 +31,7 @@ Follow this structured workflow to install and verify server-side tracking on th
 
 6. **Next steps and hand-off:**
    Call `get_next_steps` with `container_id` to inspect remaining tasks (`overall_progress`, `next_steps[]`).
-   Call `create_login_link` with `container_id` and `idempotency_key` to generate a one-time dashboard access link for the user.
+   Call `create_login_link` with `container_id`, `container_hash`, `idempotency_key` and `target_page: "dashboard"` to generate a one-time dashboard access link for the user.
 
 ## Operational Rules
 
